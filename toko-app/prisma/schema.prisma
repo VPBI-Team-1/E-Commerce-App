@@ -1,0 +1,217 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  VERIFYING
+  PAID
+  SHIPPED
+  COMPLETED
+  CANCELLED
+}
+
+// ----------------------------------------------------
+// A. User Management
+// ----------------------------------------------------
+
+model User {
+  id        String     @id @default(uuid())
+  name      String     @db.VarChar(255)
+  email     String     @unique @db.VarChar(255)
+  password  String     @db.VarChar(255)
+  role      Role       @default(CUSTOMER)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  addresses Address[]
+  cart      Cart?
+  orders    Order[]
+  wishlists Wishlist[]
+  reviews   Review[]
+}
+
+model Address {
+  id          String   @id @default(uuid())
+  userId      String
+  fullAddress String   @db.Text
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ----------------------------------------------------
+// B. Product Catalog
+// ----------------------------------------------------
+
+model Category {
+  id        String     @id @default(uuid())
+  name      String     @db.VarChar(100)
+  parentId  String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[] @relation("CategoryHierarchy")
+  products Product[]
+}
+
+model Brand {
+  id        String    @id @default(uuid())
+  name      String    @db.VarChar(100)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  products Product[]
+}
+
+model Product {
+  id             String    @id @default(uuid())
+  name           String    @db.VarChar(255)
+  description    String    @db.Text
+  warrantyInfo   String?   @db.VarChar(255)
+  isArchived     Boolean   @default(false)
+  categoryId     String
+  brandId        String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  category Category         @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  brand    Brand            @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  variants ProductVariant[]
+  images   ProductImage[]
+  reviews  Review[]
+  wishlists Wishlist[]
+}
+
+model ProductVariant {
+  id        String   @id @default(uuid())
+  productId String
+  name      String   @db.VarChar(150)
+  sku       String?  @db.VarChar(100)
+  price     Decimal  @db.Decimal(12, 2)
+  stock     Int      @default(0) @db.Integer
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+}
+
+model ProductImage {
+  id        String   @id @default(uuid())
+  productId String
+  url       String   @db.VarChar(2048)
+  isPrimary Boolean  @default(false)
+  sortOrder Int      @default(0) @db.Integer
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+// ----------------------------------------------------
+// C. Shopping & Transaction
+// ----------------------------------------------------
+
+model Cart {
+  id        String     @id @default(uuid())
+  userId    String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CartItem[]
+}
+
+model CartItem {
+  id               String   @id @default(uuid())
+  cartId           String
+  productVariantId String
+  quantity         Int      @default(1) @db.Integer
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  cart    Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  variant ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productVariantId])
+}
+
+model Order {
+  id              String      @id @default(uuid())
+  invoiceNumber   String      @unique @db.VarChar(50)
+  userId          String
+  status          OrderStatus @default(PENDING)
+  totalAmount     Decimal     @db.Decimal(12, 2)
+  courier         String      @db.VarChar(50)
+  trackingNumber  String?     @db.VarChar(100)
+  eta             DateTime?   @db.Timestamp(3)
+  expiresAt       DateTime    @db.Timestamp(3)
+  shippingAddress Json        @db.JsonB
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  items   OrderItem[]
+  reviews Review[]
+}
+
+model OrderItem {
+  id               String   @id @default(uuid())
+  orderId          String
+  productVariantId String
+  productName      String   @db.VarChar(255)
+  price            Decimal  @db.Decimal(12, 2)
+  quantity         Int      @db.Integer
+  subtotal         Decimal  @db.Decimal(12, 2)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  order   Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variant ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Restrict)
+}
+
+// ----------------------------------------------------
+// D. Supporting Features
+// ----------------------------------------------------
+
+model Wishlist {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  orderId   String
+  rating    Int      @db.SmallInt
+  comment   String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
