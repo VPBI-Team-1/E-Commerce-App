@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { DeleteCategoryButton } from './DeleteCategoryButton';
 
 export interface RootCategoryItem {
@@ -63,17 +62,13 @@ export function RootCategoryTable({ categories }: RootCategoryTableProps) {
                   </td>
 
                   <td className="px-6 py-4 text-center">
-                    {hasChildren ? (
-                      <Link
-                        href={`/admin/subcategories?parentId=${cat.id}`}
-                        className="inline-flex items-center gap-1 font-mono text-xs text-gray-900 hover:text-blue-600 hover:underline font-semibold"
-                        title="Lihat Subkategori Terkait"
-                      >
-                        {cat._count.children} Subkategori &rarr;
-                      </Link>
-                    ) : (
-                      <span className="font-mono text-gray-400">0</span>
-                    )}
+                    <span
+                      className={`font-mono ${
+                        hasChildren ? 'text-gray-900 font-medium' : 'text-gray-400'
+                      }`}
+                    >
+                      {cat._count.children}
+                    </span>
                   </td>
 
                   <td className="px-6 py-4 text-center">
