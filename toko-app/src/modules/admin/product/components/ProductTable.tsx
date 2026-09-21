@@ -1,4 +1,13 @@
+'use client';
+
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTransition } from 'react';
 import { ProductActionMenu } from './ProductActionMenu';
+import {
+  ChevronUpDownIcon,
+  ChevronUpIcon,
+  ChevronDownIcon,
+} from '@heroicons/react/24/outline';
 
 export interface ProductItem {
   id: string;
@@ -12,7 +21,7 @@ export interface ProductItem {
   variants: {
     id: string;
     name: string;
-    price: any;
+    price: number;
     stock: number;
   }[];
 }
@@ -22,6 +31,37 @@ interface ProductTableProps {
 }
 
 export function ProductTable({ products }: ProductTableProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [, startTransition] = useTransition();
+
+  const currentSortBy = searchParams.get('sortBy');
+  const currentSortOrder = searchParams.get('sortOrder') || 'asc';
+
+  const handleSort = (field: 'price' | 'stock') => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (currentSortBy === field) {
+      if (currentSortOrder === 'asc') {
+        params.set('sortOrder', 'desc');
+      } else {
+        // Toggle off sorting jika sudah desc
+        params.delete('sortBy');
+        params.delete('sortOrder');
+      }
+    } else {
+      params.set('sortBy', field);
+      params.set('sortOrder', 'asc');
+    }
+
+    params.set('page', '1');
+
+    startTransition(() => {
+      router.push(`${pathname}?${params.toString()}`);
+    });
+  };
+
   // Guard Clause: Tampilkan state kosong jika tidak ada produk yang cocok
   if (!products || products.length === 0) {
     return (
@@ -46,13 +86,55 @@ export function ProductTable({ products }: ProductTableProps) {
     <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs text-gray-600">
-          <thead className="bg-gray-50 text-gray-700 font-semibold border-b border-gray-200 uppercase tracking-wider text-[11px]">
+          <thead className="bg-gray-50 text-gray-700 font-semibold border-b border-gray-200 uppercase tracking-wider text-[11px] whitespace-nowrap">
             <tr>
               <th className="px-6 py-3.5">Produk</th>
               <th className="px-6 py-3.5">Kategori</th>
               <th className="px-6 py-3.5">Brand</th>
-              <th className="px-6 py-3.5">Harga &amp; Varian</th>
-              <th className="px-6 py-3.5 text-center">Total Stok</th>
+              <th className="px-6 py-3.5">
+                <button
+                  type="button"
+                  onClick={() => handleSort('price')}
+                  className="group inline-flex items-center gap-1.5 font-semibold text-gray-700 hover:text-gray-900 cursor-pointer uppercase tracking-wider text-[11px] select-none whitespace-nowrap"
+                  title={`Urutkan berdasarkan harga (${currentSortBy === 'price' && currentSortOrder === 'asc'
+                      ? 'Saat ini Terendah -> Klik untuk Tertinggi'
+                      : 'Klik untuk Terendah'
+                    })`}
+                >
+                  <span>Harga &amp; Varian</span>
+                  {currentSortBy === 'price' ? (
+                    currentSortOrder === 'asc' ? (
+                      <ChevronUpIcon className="w-3.5 h-3.5 text-primary" />
+                    ) : (
+                      <ChevronDownIcon className="w-3.5 h-3.5 text-primary" />
+                    )
+                  ) : (
+                    <ChevronUpDownIcon className="w-3.5 h-3.5 text-gray-400 group-hover:text-gray-600" />
+                  )}
+                </button>
+              </th>
+              <th className="px-6 py-3.5 text-center">
+                <button
+                  type="button"
+                  onClick={() => handleSort('stock')}
+                  className="group inline-flex items-center justify-center gap-1.5 font-semibold text-gray-700 hover:text-gray-900 cursor-pointer uppercase tracking-wider text-[11px] select-none mx-auto whitespace-nowrap"
+                  title={`Urutkan berdasarkan stok (${currentSortBy === 'stock' && currentSortOrder === 'asc'
+                      ? 'Saat ini Sedikit -> Klik untuk Terbanyak'
+                      : 'Klik untuk Tersedikit'
+                    })`}
+                >
+                  <span>Total Stok</span>
+                  {currentSortBy === 'stock' ? (
+                    currentSortOrder === 'asc' ? (
+                      <ChevronUpIcon className="w-3.5 h-3.5 text-primary" />
+                    ) : (
+                      <ChevronDownIcon className="w-3.5 h-3.5 text-primary" />
+                    )
+                  ) : (
+                    <ChevronUpDownIcon className="w-3.5 h-3.5 text-gray-400 group-hover:text-gray-600" />
+                  )}
+                </button>
+              </th>
               <th className="px-6 py-3.5 text-center">Status</th>
               <th className="px-6 py-3.5 text-right">Aksi</th>
             </tr>
@@ -84,9 +166,8 @@ export function ProductTable({ products }: ProductTableProps) {
               return (
                 <tr
                   key={product.id}
-                  className={`hover:bg-gray-50/50 transition-colors ${
-                    product.isArchived ? 'bg-gray-50/30' : ''
-                  }`}
+                  className={`hover:bg-gray-50/50 transition-colors ${product.isArchived ? 'bg-gray-50/30' : ''
+                    }`}
                 >
                   {/* Info Produk (Thumbnail + Nama) */}
                   <td className="px-6 py-4">
@@ -138,11 +219,10 @@ export function ProductTable({ products }: ProductTableProps) {
                   {/* Total Stok */}
                   <td className="px-6 py-4 text-center">
                     <span
-                      className={`font-mono ${
-                        totalStock > 0
+                      className={`font-mono ${totalStock > 0
                           ? 'text-gray-900 font-medium'
                           : 'text-red-600 font-semibold'
-                      }`}
+                        }`}
                     >
                       {totalStock}
                     </span>
@@ -151,11 +231,10 @@ export function ProductTable({ products }: ProductTableProps) {
                   {/* Status */}
                   <td className="px-6 py-4 text-center">
                     <span
-                      className={`font-medium ${
-                        product.isArchived
+                      className={`font-medium ${product.isArchived
                           ? 'text-amber-600'
                           : 'text-emerald-600'
-                      }`}
+                        }`}
                     >
                       {product.isArchived ? 'Diarsipkan' : 'Aktif'}
                     </span>
