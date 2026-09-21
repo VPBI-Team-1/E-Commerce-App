@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { deleteCategory } from '../actions/category.actions';
 import { Modal } from '@/components/ui/Modal';
+import { TrashIcon } from '@heroicons/react/24/outline';
 
 interface DeleteCategoryButtonProps {
   categoryId: string;
@@ -68,9 +69,10 @@ export function DeleteCategoryButton({
       <button
         type="button"
         onClick={handleOpen}
-        className="text-xs font-medium text-red-600 hover:text-red-800 transition-colors"
+        title="Hapus"
+        className="p-1.5 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors inline-flex items-center justify-center"
       >
-        Hapus
+        <TrashIcon className="w-4 h-4" />
       </button>
 
       <Modal

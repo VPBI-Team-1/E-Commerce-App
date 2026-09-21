@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { archiveProduct } from '../actions/product.actions';
 import { Modal } from '@/components/ui/Modal';
+import { ArchiveBoxIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 
 interface ArchiveProductButtonProps {
   productId: string;
@@ -55,13 +56,18 @@ export function ArchiveProductButton({
       <button
         type="button"
         onClick={handleOpen}
-        className={`text-xs font-medium transition-colors ${
+        title={isArchived ? 'Pulihkan Produk' : 'Arsipkan Produk'}
+        className={`p-1.5 rounded transition-colors inline-flex items-center justify-center ${
           isArchived
-            ? 'text-emerald-700 hover:text-emerald-900'
-            : 'text-amber-700 hover:text-amber-900'
+            ? 'text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50'
+            : 'text-gray-400 hover:text-amber-600 hover:bg-amber-50'
         }`}
       >
-        {isArchived ? 'Pulihkan' : 'Arsipkan'}
+        {isArchived ? (
+          <ArrowPathIcon className="w-4 h-4" />
+        ) : (
+          <ArchiveBoxIcon className="w-4 h-4" />
+        )}
       </button>
 
       <Modal
