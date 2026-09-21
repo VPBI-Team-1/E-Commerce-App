@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   Squares2X2Icon,
   TagIcon,
+  BuildingStorefrontIcon,
   CubeIcon,
   ShoppingBagIcon,
 } from '@heroicons/react/24/outline';
@@ -22,6 +23,11 @@ const navigationItems = [
     icon: TagIcon,
     matches: (path: string) =>
       path.startsWith('/admin/categories') || path.startsWith('/admin/subcategories'),
+  },
+  {
+    name: 'Brand',
+    href: '/admin/brands',
+    icon: BuildingStorefrontIcon,
   },
   {
     name: 'Katalog Produk',
