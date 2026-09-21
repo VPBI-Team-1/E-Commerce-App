@@ -14,12 +14,14 @@ interface ProductActionMenuProps {
   productId: string;
   productName: string;
   isArchived: boolean;
+  openUpwards?: boolean;
 }
 
 export function ProductActionMenu({
   productId,
   productName,
   isArchived,
+  openUpwards = false,
 }: ProductActionMenuProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -100,7 +102,11 @@ export function ProductActionMenu({
 
           {/* Dropdown Menu */}
           {isDropdownOpen && (
-            <div className="absolute right-0 top-full mt-1 w-36 rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5 z-20 border border-gray-100 text-left">
+            <div
+              className={`absolute right-0 ${
+                openUpwards ? 'bottom-full mb-1' : 'top-full mt-1'
+              } w-36 rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5 z-20 border border-gray-100 text-left`}
+            >
               <button
                 type="button"
                 onClick={() => {

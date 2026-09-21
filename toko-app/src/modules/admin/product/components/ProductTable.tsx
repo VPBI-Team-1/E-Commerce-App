@@ -1,5 +1,4 @@
 import { ProductActionMenu } from './ProductActionMenu';
-import { Badge } from '@/components/ui/Badge';
 
 export interface ProductItem {
   id: string;
@@ -45,7 +44,7 @@ export function ProductTable({ products }: ProductTableProps) {
 
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
-      <div className="overflow-x-auto min-h-[300px]">
+      <div className="overflow-x-auto">
         <table className="w-full text-left text-xs text-gray-600">
           <thead className="bg-gray-50 text-gray-700 font-semibold border-b border-gray-200 uppercase tracking-wider text-[11px]">
             <tr>
@@ -59,7 +58,7 @@ export function ProductTable({ products }: ProductTableProps) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {products.map((product) => {
+            {products.map((product, index) => {
               const primaryImage =
                 product.images.find((img) => img.isPrimary)?.url ||
                 product.images[0]?.url;
@@ -149,17 +148,17 @@ export function ProductTable({ products }: ProductTableProps) {
                     </span>
                   </td>
 
-                  {/* Status Badge */}
+                  {/* Status */}
                   <td className="px-6 py-4 text-center">
-                    {product.isArchived ? (
-                      <Badge variant="warning" size="sm">
-                        Diarsipkan
-                      </Badge>
-                    ) : (
-                      <Badge variant="success" size="sm">
-                        Aktif
-                      </Badge>
-                    )}
+                    <span
+                      className={`font-medium ${
+                        product.isArchived
+                          ? 'text-amber-600'
+                          : 'text-emerald-600'
+                      }`}
+                    >
+                      {product.isArchived ? 'Diarsipkan' : 'Aktif'}
+                    </span>
                   </td>
 
                   {/* Aksi Arsipkan / Pulihkan */}
@@ -168,6 +167,7 @@ export function ProductTable({ products }: ProductTableProps) {
                       productId={product.id}
                       productName={product.name}
                       isArchived={product.isArchived}
+                      openUpwards={index >= products.length - 1 || products.length <= 2}
                     />
                   </td>
                 </tr>
