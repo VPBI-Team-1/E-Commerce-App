@@ -57,10 +57,10 @@ export function ArchiveProductButton({
         type="button"
         onClick={handleOpen}
         title={isArchived ? 'Pulihkan Produk' : 'Arsipkan Produk'}
-        className={`p-1.5 rounded transition-colors inline-flex items-center justify-center ${
+        className={`p-1.5 rounded transition-colors inline-flex items-center justify-center cursor-pointer ${
           isArchived
-            ? 'text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50'
-            : 'text-gray-400 hover:text-amber-600 hover:bg-amber-50'
+            ? 'text-emerald-600 hover:text-emerald-800'
+            : 'text-gray-400 hover:text-amber-600'
         }`}
       >
         {isArchived ? (

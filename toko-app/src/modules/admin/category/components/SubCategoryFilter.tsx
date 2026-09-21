@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useTransition } from 'react';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 interface ParentOption {
   id: string;
@@ -69,7 +70,7 @@ export function SubCategoryFilter({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cari nama subkategori..."
-          className="w-full rounded-md border border-gray-200 bg-white px-3.5 py-2 text-xs text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:outline-none"
+          className="w-full rounded-md border border-gray-200 bg-white pl-3.5 pr-8 py-2 text-xs text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:outline-none"
         />
         {search && (
           <button
@@ -78,9 +79,11 @@ export function SubCategoryFilter({
               setSearch('');
               applyFilters('', selectedParent);
             }}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-600"
+            title="Bersihkan pencarian"
+            aria-label="Bersihkan pencarian"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
           >
-            Bersihkan
+            <XMarkIcon className="w-4 h-4" />
           </button>
         )}
       </form>
@@ -94,7 +97,7 @@ export function SubCategoryFilter({
           id="parent-filter"
           value={selectedParent}
           onChange={handleParentChange}
-          className="rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-900 focus:border-gray-400 focus:outline-none"
+          className="rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-900 focus:border-gray-400 focus:outline-none cursor-pointer"
         >
           <option value="">Semua Kategori Induk</option>
           {parentCategories.map((p) => (

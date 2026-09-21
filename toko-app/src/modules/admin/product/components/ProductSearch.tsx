@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useTransition } from 'react';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 interface ProductSearchProps {
   initialSearch?: string;
@@ -65,7 +66,7 @@ export function ProductSearch({
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Cari nama produk..."
-          className="w-full rounded-md border border-gray-200 bg-white px-3.5 py-2 text-xs text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:outline-none"
+          className="w-full rounded-md border border-gray-200 bg-white pl-3.5 pr-8 py-2 text-xs text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:outline-none"
         />
         {searchTerm && (
           <button
@@ -74,9 +75,11 @@ export function ProductSearch({
               setSearchTerm('');
               applyFilters('', initialStatus);
             }}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-600"
+            title="Bersihkan pencarian"
+            aria-label="Bersihkan pencarian"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
           >
-            Bersihkan
+            <XMarkIcon className="w-4 h-4" />
           </button>
         )}
       </form>
@@ -90,7 +93,7 @@ export function ProductSearch({
               key={tab.value}
               type="button"
               onClick={() => handleStatusChange(tab.value)}
-              className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
+              className={`rounded px-3 py-1 text-xs font-medium transition-colors cursor-pointer ${
                 isSelected
                   ? 'bg-gray-900 text-white font-semibold'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'

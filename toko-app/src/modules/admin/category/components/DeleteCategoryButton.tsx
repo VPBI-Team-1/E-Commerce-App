@@ -70,7 +70,7 @@ export function DeleteCategoryButton({
         type="button"
         onClick={handleOpen}
         title="Hapus"
-        className="p-1.5 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors inline-flex items-center justify-center"
+        className="p-1.5 rounded text-gray-400 hover:text-red-600 transition-colors inline-flex items-center justify-center cursor-pointer"
       >
         <TrashIcon className="w-4 h-4" />
       </button>
