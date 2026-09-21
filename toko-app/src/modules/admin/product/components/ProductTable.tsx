@@ -1,4 +1,4 @@
-import { ArchiveProductButton } from './ArchiveProductButton';
+import { ProductActionMenu } from './ProductActionMenu';
 import { Badge } from '@/components/ui/Badge';
 
 export interface ProductItem {
@@ -45,7 +45,7 @@ export function ProductTable({ products }: ProductTableProps) {
 
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto min-h-[300px]">
         <table className="w-full text-left text-xs text-gray-600">
           <thead className="bg-gray-50 text-gray-700 font-semibold border-b border-gray-200 uppercase tracking-wider text-[11px]">
             <tr>
@@ -164,7 +164,7 @@ export function ProductTable({ products }: ProductTableProps) {
 
                   {/* Aksi Arsipkan / Pulihkan */}
                   <td className="px-6 py-4 text-right">
-                    <ArchiveProductButton
+                    <ProductActionMenu
                       productId={product.id}
                       productName={product.name}
                       isArchived={product.isArchived}

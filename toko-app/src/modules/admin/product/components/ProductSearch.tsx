@@ -95,7 +95,7 @@ export function ProductSearch({
               onClick={() => handleStatusChange(tab.value)}
               className={`rounded px-3 py-1 text-xs font-medium transition-colors cursor-pointer ${
                 isSelected
-                  ? 'bg-gray-900 text-white font-semibold'
+                  ? 'bg-primary text-white font-semibold'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >

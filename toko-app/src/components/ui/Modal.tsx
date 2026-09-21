@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 interface ModalProps {
   isOpen: boolean;
@@ -48,33 +49,47 @@ export function Modal({
   const confirmBtnStyles =
     confirmVariant === 'danger'
       ? 'bg-red-600 hover:bg-red-700 text-white'
-      : 'bg-gray-900 hover:bg-gray-800 text-white';
+      : 'bg-primary hover:bg-blue-700 text-white';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/30 transition-opacity"
+        className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
         onClick={isLoading ? undefined : onClose}
       />
 
       {/* Dialog Card */}
-      <div className="relative z-10 w-full max-w-md bg-white border border-gray-200 rounded-lg p-6">
-        <h3 className="text-base font-semibold text-gray-900">{title}</h3>
-        {description && (
-          <p className="mt-2 text-sm text-gray-600 leading-relaxed">
-            {description}
-          </p>
-        )}
-
-        {children && <div className="mt-4">{children}</div>}
-
-        <div className="mt-6 flex justify-end gap-3">
+      <div className="relative z-10 w-full max-w-md bg-white border border-gray-200 rounded-xl p-6 shadow-xl text-left">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4">
+          <h3 className="text-base font-semibold text-gray-900 text-left">{title}</h3>
           <button
             type="button"
             disabled={isLoading}
             onClick={onClose}
-            className="rounded-md border border-gray-300 bg-white px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            aria-label="Tutup"
+            className="rounded-md p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer -mr-1 -mt-1"
+          >
+            <XMarkIcon className="w-4 h-4" />
+          </button>
+        </div>
+
+        {description && (
+          <p className="mt-2 text-sm text-gray-600 leading-relaxed text-left">
+            {description}
+          </p>
+        )}
+
+        {children && <div className="mt-3 text-left">{children}</div>}
+
+        {/* Action Buttons */}
+        <div className="mt-6 flex items-center justify-end gap-2.5">
+          <button
+            type="button"
+            disabled={isLoading}
+            onClick={onClose}
+            className="rounded-md border border-gray-300 bg-white px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 cursor-pointer transition-colors"
           >
             {cancelText}
           </button>
@@ -83,7 +98,7 @@ export function Modal({
               type="button"
               disabled={isLoading}
               onClick={onConfirm}
-              className={`rounded-md px-3.5 py-2 text-xs font-medium disabled:opacity-50 ${confirmBtnStyles}`}
+              className={`rounded-md px-3.5 py-2 text-xs font-medium disabled:opacity-50 cursor-pointer transition-colors ${confirmBtnStyles}`}
             >
               {isLoading ? 'Memproses...' : confirmText}
             </button>
