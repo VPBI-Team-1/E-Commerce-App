@@ -104,7 +104,7 @@ export function OrderActionButtons({
             type="button"
             disabled={isPending}
             onClick={handleVerify}
-            className="w-full inline-flex items-center justify-center rounded bg-gray-900 px-4 py-2 text-xs font-semibold text-white hover:bg-gray-800 disabled:opacity-50 transition-colors cursor-pointer"
+            className="w-full inline-flex items-center justify-center rounded bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors cursor-pointer"
           >
             {isPending ? 'Memproses...' : 'Setujui Pembayaran'}
           </button>
@@ -115,7 +115,7 @@ export function OrderActionButtons({
             type="button"
             disabled={isPending}
             onClick={handleShip}
-            className="w-full inline-flex items-center justify-center rounded bg-gray-900 px-4 py-2 text-xs font-semibold text-white hover:bg-gray-800 disabled:opacity-50 transition-colors cursor-pointer"
+            className="w-full inline-flex items-center justify-center rounded bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors cursor-pointer"
           >
             {isPending ? 'Memproses...' : 'Kirim Barang'}
           </button>
