@@ -61,6 +61,7 @@ export function OrderTable({ orders }: OrderTableProps) {
           <thead className="bg-gray-50 text-gray-700 font-semibold border-b border-gray-200 uppercase tracking-wider text-[11px] whitespace-nowrap">
             <tr>
               <th className="px-6 py-3.5">Invoice</th>
+              <th className="px-6 py-3.5">Tanggal</th>
               <th className="px-6 py-3.5">Pelanggan</th>
               <th className="px-6 py-3.5">Kurir</th>
               <th className="px-6 py-3.5">Total Tagihan</th>
@@ -71,10 +72,14 @@ export function OrderTable({ orders }: OrderTableProps) {
           <tbody className="divide-y divide-gray-200">
             {orders.map((order) => (
               <tr key={order.id} className="hover:bg-gray-50/70 transition-colors">
-                {/* Invoice & Date */}
+                {/* Invoice */}
                 <td className="px-6 py-4">
-                  <div className="font-semibold text-gray-900">{order.invoiceNumber}</div>
-                  <div className="text-[11px] text-gray-400 mt-0.5">{formatDate(order.createdAt)}</div>
+                  <span className="font-semibold text-gray-900">{order.invoiceNumber}</span>
+                </td>
+
+                {/* Tanggal */}
+                <td className="px-6 py-4 text-gray-500 whitespace-nowrap">
+                  {formatDate(order.createdAt)}
                 </td>
 
                 {/* Customer */}
