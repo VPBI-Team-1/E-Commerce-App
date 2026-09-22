@@ -80,7 +80,6 @@ export function OrderTable({ orders }: OrderTableProps) {
                 {/* Customer */}
                 <td className="px-6 py-4">
                   <div className="font-medium text-gray-900">{order.user.name}</div>
-                  <div className="text-[11px] text-gray-400 mt-0.5">{order.user.email}</div>
                 </td>
 
                 {/* Courier */}
