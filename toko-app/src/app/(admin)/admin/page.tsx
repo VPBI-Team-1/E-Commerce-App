@@ -1,3 +1,5 @@
+import prisma from '@/lib/prisma';
+import { OrderStatus } from '@prisma/client';
 import {
   BanknotesIcon,
   ShoppingBagIcon,
@@ -7,30 +9,68 @@ import {
 
 export const dynamic = 'force-dynamic';
 
-export default function AdminDashboardPage() {
-  // Data ringkasan (hardcoded sementara sesuai kebutuhan tahap ini)
+export default async function AdminDashboardPage() {
+  const [salesAggregate, totalOrders, activeProducts, totalCustomers] =
+    await Promise.all([
+      prisma.order.aggregate({
+        where: {
+          status: {
+            in: [OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.COMPLETED],
+          },
+        },
+        _sum: {
+          totalAmount: true,
+        },
+      }),
+      prisma.order.count({
+        where: {
+          status: {
+            not: OrderStatus.CANCELLED,
+          },
+        },
+      }),
+      prisma.product.count({
+        where: { isArchived: false },
+      }),
+      prisma.user.count({
+        where: { role: 'CUSTOMER' },
+      }),
+    ]);
+
+  const totalSalesAmount = salesAggregate._sum.totalAmount
+    ? Number(salesAggregate._sum.totalAmount)
+    : 0;
+
+  const formatIDR = (val: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      maximumFractionDigits: 0,
+    }).format(val);
+  };
+
   const statCards = [
     {
       title: 'Total Penjualan',
-      value: 'Rp 48.500.000',
-      desc: 'Akumulasi penjualan bulan ini',
+      value: formatIDR(totalSalesAmount),
+      desc: 'Pesanan lunas, dikirim, dan selesai',
       icon: BanknotesIcon,
     },
     {
       title: 'Total Pesanan',
-      value: '128',
-      desc: 'Pesanan masuk dan selesai',
+      value: totalOrders.toLocaleString('id-ID'),
+      desc: 'Pesanan menunggu bayar, verifikasi, lunas, dikirim, dan selesai',
       icon: ShoppingBagIcon,
     },
     {
       title: 'Produk Aktif',
-      value: '22',
+      value: activeProducts.toLocaleString('id-ID'),
       desc: 'Tayang di katalog publik',
       icon: CubeIcon,
     },
     {
       title: 'Total Pelanggan',
-      value: '64',
+      value: totalCustomers.toLocaleString('id-ID'),
       desc: 'Pengguna terdaftar aktif',
       icon: UsersIcon,
     },
