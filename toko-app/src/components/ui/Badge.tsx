@@ -26,7 +26,7 @@ export function Badge({
 
   return (
     <span
-      className={`inline-flex items-center font-medium border rounded-full ${sizeStyles} ${variantStyles}`}
+      className={`inline-flex items-center font-medium border rounded ${sizeStyles} ${variantStyles}`}
     >
       {children}
     </span>

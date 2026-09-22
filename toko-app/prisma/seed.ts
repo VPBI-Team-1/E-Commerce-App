@@ -4,6 +4,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 
 import { seedUsers } from './seeders/01-users';
 import { seedProducts } from './seeders/02-products';
+import { seedOrders } from './seeders/03-orders';
 
 const connectionString = process.env.DATABASE_URL;
 const pool = new Pool({ connectionString });
@@ -34,6 +35,7 @@ async function main() {
   // Eksekusi seeder berurutan
   await seedUsers(prisma);
   await seedProducts(prisma);
+  await seedOrders(prisma);
 
   console.log('=== Seluruh Seeder Berhasil Dijalankan! ===');
 }

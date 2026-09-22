@@ -2,6 +2,7 @@ import prisma from '@/lib/prisma';
 import { BrandTable } from '@/modules/admin/brand/components/BrandTable';
 import { BrandSearch } from '@/modules/admin/brand/components/BrandSearch';
 import { BrandPagination } from '@/modules/admin/brand/components/BrandPagination';
+import { CreateBrandButton } from '@/modules/admin/brand/components/CreateBrandButton';
 import { Prisma } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -31,24 +32,29 @@ export default async function AdminBrandsPage({
     };
   }
 
-  const [totalCount, brands] = await Promise.all([
-    prisma.brand.count({ where }),
-    prisma.brand.findMany({
-      where,
-      skip: (pageNumber - 1) * pageSize,
-      take: pageSize,
-      include: {
-        _count: {
-          select: {
-            products: true,
-          },
+  // Ambil semua brand sesuai filter dan urutkan secara alfabetis A-Z (case-insensitive)
+  const allMatchingBrands = await prisma.brand.findMany({
+    where,
+    include: {
+      _count: {
+        select: {
+          products: true,
         },
       },
-      orderBy: { name: 'asc' },
-    }),
-  ]);
+    },
+  });
 
+  // Pastikan pengurutan benar-benar A-Z (misal: Alienware sebelum AMD, Edifier sebelum EVGA)
+  allMatchingBrands.sort((a, b) =>
+    a.name.localeCompare(b.name, 'id', { sensitivity: 'base' })
+  );
+
+  const totalCount = allMatchingBrands.length;
   const totalPages = Math.ceil(totalCount / pageSize);
+  const brands = allMatchingBrands.slice(
+    (pageNumber - 1) * pageSize,
+    pageNumber * pageSize
+  );
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
@@ -63,11 +69,15 @@ export default async function AdminBrandsPage({
           </p>
         </div>
 
-        {/* Counter Info */}
-        <div className="flex items-center gap-2 text-xs">
-          <span className="px-3 py-1.5 rounded border border-gray-200 bg-white text-gray-600 font-medium">
-            Total Brand: <strong className="text-gray-900 font-semibold">{totalCount}</strong>
-          </span>
+        {/* Counter Info & Aksi */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="px-3 py-1.5 rounded border border-gray-200 bg-white text-gray-600 font-medium">
+              Total Brand: <strong className="text-gray-900 font-semibold">{totalCount}</strong>
+            </span>
+          </div>
+
+          <CreateBrandButton buttonLabel="Tambah Brand" />
         </div>
       </div>
 

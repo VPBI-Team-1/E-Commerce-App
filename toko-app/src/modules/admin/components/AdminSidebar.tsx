@@ -10,7 +10,16 @@ import {
   ShoppingBagIcon,
 } from '@heroicons/react/24/outline';
 
-const navigationItems = [
+interface NavigationItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  exact?: boolean;
+  matches?: (path: string) => boolean;
+  badge?: string;
+}
+
+const navigationItems: NavigationItem[] = [
   {
     name: 'Dashboard',
     href: '/admin',
@@ -38,7 +47,6 @@ const navigationItems = [
     name: 'Pesanan',
     href: '/admin/orders',
     icon: ShoppingBagIcon,
-    badge: 'Tahap 4',
   },
 ];
 

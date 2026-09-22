@@ -1,5 +1,5 @@
 import { DeleteBrandButton } from './DeleteBrandButton';
-import { PencilSquareIcon } from '@heroicons/react/24/outline';
+import { EditBrandButton } from './EditBrandButton';
 
 export interface BrandItem {
   id: string;
@@ -79,14 +79,13 @@ export function BrandTable({ brands }: BrandTableProps) {
                   {/* Aksi */}
                   <td className="px-6 py-4 text-right">
                     <div className="inline-flex items-center justify-end gap-1">
-                      {/* Tombol Edit (Tampilan/UI) */}
-                      <button
-                        type="button"
-                        title="Edit Brand"
-                        className="p-1.5 rounded text-gray-400 hover:text-blue-600 transition-colors inline-flex items-center justify-center cursor-pointer"
-                      >
-                        <PencilSquareIcon className="w-4 h-4" />
-                      </button>
+                      {/* Tombol Edit */}
+                      <EditBrandButton
+                        brand={{
+                          id: brand.id,
+                          name: brand.name,
+                        }}
+                      />
 
                       {/* Tombol Hapus dengan Guard Clause */}
                       <DeleteBrandButton

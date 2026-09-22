@@ -45,10 +45,15 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
         { name: 'asc' },
       ],
     }),
-    prisma.brand.findMany({
-      select: { id: true, name: true },
-      orderBy: { name: 'asc' },
-    }),
+    prisma.brand
+      .findMany({
+        select: { id: true, name: true },
+      })
+      .then((bList) =>
+        bList.sort((a, b) =>
+          a.name.localeCompare(b.name, 'id', { sensitivity: 'base' })
+        )
+      ),
   ]);
 
   if (!product) {

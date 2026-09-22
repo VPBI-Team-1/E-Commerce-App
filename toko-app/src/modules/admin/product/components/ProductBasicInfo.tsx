@@ -40,6 +40,15 @@ export function ProductBasicInfo({
     [categories]
   );
 
+  // Urutkan brand secara alfabetis A-Z (case-insensitive)
+  const sortedBrands = useMemo(
+    () =>
+      [...brands].sort((a, b) =>
+        a.name.localeCompare(b.name, 'id', { sensitivity: 'base' })
+      ),
+    [brands]
+  );
+
   // Cari kategori induk awal jika sedang mengedit produk yang sudah memiliki kategori
   const initialRootId = useMemo(() => {
     if (!currentCategoryId) return '';
@@ -197,7 +206,7 @@ export function ProductBasicInfo({
             }`}
           >
             <option value="">Pilih Brand</option>
-            {brands.map((b) => (
+            {sortedBrands.map((b) => (
               <option key={b.id} value={b.id}>
                 {b.name}
               </option>

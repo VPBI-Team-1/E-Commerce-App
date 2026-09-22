@@ -21,10 +21,15 @@ export default async function NewProductPage() {
         { name: 'asc' },
       ],
     }),
-    prisma.brand.findMany({
-      select: { id: true, name: true },
-      orderBy: { name: 'asc' },
-    }),
+    prisma.brand
+      .findMany({
+        select: { id: true, name: true },
+      })
+      .then((bList) =>
+        bList.sort((a, b) =>
+          a.name.localeCompare(b.name, 'id', { sensitivity: 'base' })
+        )
+      ),
   ]);
 
   return <ProductForm categories={categories} brands={brands} />;
