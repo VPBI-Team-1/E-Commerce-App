@@ -2,6 +2,7 @@ import prisma from '@/lib/prisma';
 import { CategoryNavTabs } from '@/modules/admin/category/components/CategoryNavTabs';
 import { RootCategoryTable } from '@/modules/admin/category/components/RootCategoryTable';
 import { CategoryPagination } from '@/modules/admin/category/components/CategoryPagination';
+import { CreateCategoryButton } from '@/modules/admin/category/components/CreateCategoryButton';
 import { Prisma } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -57,6 +58,11 @@ export default async function AdminCategoriesPage({
 
   const totalPages = Math.ceil(totalCount / pageSize);
 
+  const parentOptions = categories.map((c) => ({
+    id: c.id,
+    name: c.name,
+  }));
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       {/* Header Halaman */}
@@ -70,14 +76,21 @@ export default async function AdminCategoriesPage({
           </p>
         </div>
 
-        {/* Counter Info */}
-        <div className="flex items-center gap-2 text-xs">
-          <span className="px-3 py-1.5 rounded border border-gray-200 bg-white text-gray-600 font-medium">
-            Total Kategori Utama: <strong className="text-gray-900 font-semibold">{totalCount}</strong>
-          </span>
-          <span className="px-3 py-1.5 rounded border border-gray-200 bg-white text-gray-600 font-medium">
-            Total Subkategori: <strong className="text-gray-900 font-semibold">{totalSubcategories}</strong>
-          </span>
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-2 text-xs">
+            <span className="px-3 py-1.5 rounded border border-gray-200 bg-white text-gray-600 font-medium">
+              Total Kategori Utama: <strong className="text-gray-900 font-semibold">{totalCount}</strong>
+            </span>
+            <span className="px-3 py-1.5 rounded border border-gray-200 bg-white text-gray-600 font-medium">
+              Total Subkategori: <strong className="text-gray-900 font-semibold">{totalSubcategories}</strong>
+            </span>
+          </div>
+
+          <CreateCategoryButton
+            parentOptions={parentOptions}
+            defaultParentId={null}
+            buttonLabel="Tambah Kategori"
+          />
         </div>
       </div>
 
@@ -86,7 +99,7 @@ export default async function AdminCategoriesPage({
 
       {/* Tabel Kategori Utama */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <RootCategoryTable categories={categories} />
+        <RootCategoryTable categories={categories} parentOptions={parentOptions} />
         <CategoryPagination
           currentPage={pageNumber}
           totalPages={totalPages}

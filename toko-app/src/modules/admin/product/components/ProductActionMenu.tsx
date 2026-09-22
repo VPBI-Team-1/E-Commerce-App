@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { archiveProduct } from '../actions/product.actions';
 import { Modal } from '@/components/ui/Modal';
 import {
@@ -78,14 +79,14 @@ export function ProductActionMenu({
   return (
     <>
       <div className="inline-flex items-center justify-end gap-1">
-        {/* Tombol Edit (Tampilan/UI Placeholder) */}
-        <button
-          type="button"
+        {/* Tombol Edit Produk */}
+        <Link
+          href={`/admin/products/${productId}/edit`}
           title="Edit Produk"
-          className="p-1.5 rounded text-gray-400 hover:text-blue-600 transition-colors inline-flex items-center justify-center cursor-pointer"
+          className="p-1.5 rounded text-gray-400 hover:text-blue-600 transition-colors inline-flex items-center justify-center"
         >
           <PencilSquareIcon className="w-4 h-4" />
-        </button>
+        </Link>
 
         {/* Tombol Menu 3 Dot Vertikal */}
         <div className="relative inline-flex items-center" ref={dropdownRef}>

@@ -3,6 +3,7 @@ import { CategoryNavTabs } from '@/modules/admin/category/components/CategoryNav
 import { SubCategoryFilter } from '@/modules/admin/category/components/SubCategoryFilter';
 import { SubCategoryTable } from '@/modules/admin/category/components/SubCategoryTable';
 import { CategoryPagination } from '@/modules/admin/category/components/CategoryPagination';
+import { CreateCategoryButton } from '@/modules/admin/category/components/CreateCategoryButton';
 import { Prisma } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -82,11 +83,18 @@ export default async function AdminSubCategoriesPage({
           </p>
         </div>
 
-        {/* Counter Info */}
-        <div className="flex items-center gap-2 text-xs">
-          <span className="px-3 py-1.5 rounded border border-gray-200 bg-white text-gray-600 font-medium">
-            Total Ditemukan: <strong className="text-gray-900 font-semibold">{totalCount}</strong>
-          </span>
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-2 text-xs">
+            <span className="px-3 py-1.5 rounded border border-gray-200 bg-white text-gray-600 font-medium">
+              Total Ditemukan: <strong className="text-gray-900 font-semibold">{totalCount}</strong>
+            </span>
+          </div>
+
+          <CreateCategoryButton
+            parentOptions={parentCategories}
+            defaultParentId={null}
+            buttonLabel="Tambah Kategori"
+          />
         </div>
       </div>
 
@@ -102,7 +110,7 @@ export default async function AdminSubCategoriesPage({
 
       {/* Tabel Subkategori */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <SubCategoryTable subcategories={subcategories} />
+        <SubCategoryTable subcategories={subcategories} parentOptions={parentCategories} />
         <CategoryPagination
           currentPage={pageNumber}
           totalPages={totalPages}

@@ -1,4 +1,6 @@
 import { DeleteCategoryButton } from './DeleteCategoryButton';
+import { EditCategoryButton } from './EditCategoryButton';
+import { CategoryOption } from './CategoryFormModal';
 
 export interface RootCategoryItem {
   id: string;
@@ -12,9 +14,13 @@ export interface RootCategoryItem {
 
 interface RootCategoryTableProps {
   categories: RootCategoryItem[];
+  parentOptions?: CategoryOption[];
 }
 
-export function RootCategoryTable({ categories }: RootCategoryTableProps) {
+export function RootCategoryTable({
+  categories,
+  parentOptions,
+}: RootCategoryTableProps) {
   // Guard Clause: State kosong jika belum ada data kategori utama
   if (!categories || categories.length === 0) {
     return (
@@ -86,12 +92,23 @@ export function RootCategoryTable({ categories }: RootCategoryTableProps) {
                   </td>
 
                   <td className="px-6 py-4 text-right">
-                    <DeleteCategoryButton
-                      categoryId={cat.id}
-                      categoryName={cat.name}
-                      hasProducts={hasProducts}
-                      hasChildren={hasChildren}
-                    />
+                    <div className="inline-flex items-center justify-end gap-1">
+                      <EditCategoryButton
+                        category={{
+                          id: cat.id,
+                          name: cat.name,
+                          parentId: null,
+                          hasChildren,
+                        }}
+                        parentOptions={parentOptions || categories.map((c) => ({ id: c.id, name: c.name }))}
+                      />
+                      <DeleteCategoryButton
+                        categoryId={cat.id}
+                        categoryName={cat.name}
+                        hasProducts={hasProducts}
+                        hasChildren={hasChildren}
+                      />
+                    </div>
                   </td>
                 </tr>
               );

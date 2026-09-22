@@ -1,4 +1,6 @@
 import prisma from '@/lib/prisma';
+import Link from 'next/link';
+import { PlusIcon } from '@heroicons/react/24/outline';
 import { ProductSearch } from '@/modules/admin/product/components/ProductSearch';
 import { ProductTable, ProductItem } from '@/modules/admin/product/components/ProductTable';
 import { ProductPagination } from '@/modules/admin/product/components/ProductPagination';
@@ -146,11 +148,21 @@ export default async function AdminProductsPage({
           </p>
         </div>
 
-        {/* Counter Info */}
-        <div className="flex items-center gap-2 text-xs">
-          <span className="px-3 py-1.5 rounded border border-gray-200 bg-white text-gray-600 font-medium">
-            Total Ditemukan: <strong className="text-gray-900 font-semibold">{totalCount}</strong>
-          </span>
+        {/* Counter Info & Actions */}
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-2 text-xs">
+            <span className="px-3 py-1.5 rounded border border-gray-200 bg-white text-gray-600 font-medium">
+              Total Ditemukan: <strong className="text-gray-900 font-semibold">{totalCount}</strong>
+            </span>
+          </div>
+
+          <Link
+            href="/admin/products/new"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-primary hover:bg-blue-700 rounded transition-colors"
+          >
+            <PlusIcon className="w-4 h-4" />
+            <span>Tambah Produk</span>
+          </Link>
         </div>
       </div>
 

@@ -1,4 +1,6 @@
 import { DeleteCategoryButton } from './DeleteCategoryButton';
+import { EditCategoryButton } from './EditCategoryButton';
+import { CategoryOption } from './CategoryFormModal';
 import { Badge } from '@/components/ui/Badge';
 
 export interface SubCategoryItem {
@@ -15,9 +17,13 @@ export interface SubCategoryItem {
 
 interface SubCategoryTableProps {
   subcategories: SubCategoryItem[];
+  parentOptions?: CategoryOption[];
 }
 
-export function SubCategoryTable({ subcategories }: SubCategoryTableProps) {
+export function SubCategoryTable({
+  subcategories,
+  parentOptions,
+}: SubCategoryTableProps) {
   // Guard Clause: State kosong jika belum ada data subkategori
   if (!subcategories || subcategories.length === 0) {
     return (
@@ -85,12 +91,23 @@ export function SubCategoryTable({ subcategories }: SubCategoryTableProps) {
                   </td>
 
                   <td className="px-6 py-4 text-right">
-                    <DeleteCategoryButton
-                      categoryId={sub.id}
-                      categoryName={sub.name}
-                      hasProducts={hasProducts}
-                      hasChildren={hasChildren}
-                    />
+                    <div className="inline-flex items-center justify-end gap-1">
+                      <EditCategoryButton
+                        category={{
+                          id: sub.id,
+                          name: sub.name,
+                          parentId: sub.parentId,
+                          hasChildren,
+                        }}
+                        parentOptions={parentOptions || (sub.parent ? [{ id: sub.parent.id, name: sub.parent.name }] : [])}
+                      />
+                      <DeleteCategoryButton
+                        categoryId={sub.id}
+                        categoryName={sub.name}
+                        hasProducts={hasProducts}
+                        hasChildren={hasChildren}
+                      />
+                    </div>
                   </td>
                 </tr>
               );
