@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition } from 'react';
 import { OrderStatus } from '@prisma/client';
+import { Modal } from '@/components/ui/Modal';
 import {
   verifyPayment,
   shipOrder,
@@ -23,17 +24,6 @@ export function OrderActionButtons({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
-
-  // Tangani tombol keyboard Escape untuk menutup dialog konfirmasi
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isCancelModalOpen) {
-        setIsCancelModalOpen(false);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isCancelModalOpen]);
 
   const handleVerify = () => {
     setErrorMessage(null);
@@ -139,51 +129,25 @@ export function OrderActionButtons({
         )}
       </div>
 
-      {/* Confirmation Modal for Cancel */}
-      {isCancelModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="cancel-modal-title"
-            className="w-full max-w-sm rounded-lg border border-gray-200 bg-white p-6 shadow-sm space-y-4"
-          >
-            <div>
-              <h3
-                id="cancel-modal-title"
-                className="text-sm font-semibold text-gray-900"
-              >
-                Konfirmasi Pembatalan
-              </h3>
-              <p className="text-xs text-gray-500 mt-1">
-                Apakah Anda yakin ingin membatalkan pesanan{' '}
-                <span className="font-semibold text-gray-800">
-                  {invoiceNumber}
-                </span>
-                ? Stok produk yang terkunci akan otomatis dikembalikan ke etalase utama.
-              </p>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setIsCancelModalOpen(false)}
-                className="rounded border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Kembali
-              </button>
-              <button
-                type="button"
-                disabled={isPending}
-                onClick={handleConfirmCancel}
-                className="rounded bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
-              >
-                {isPending ? 'Membatalkan...' : 'Ya, Batalkan Pesanan'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Confirmation Modal via Global Component */}
+      <Modal
+        isOpen={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        title="Konfirmasi Pembatalan"
+        confirmText="Ya, Batalkan Pesanan"
+        cancelText="Kembali"
+        confirmVariant="danger"
+        isLoading={isPending}
+        onConfirm={handleConfirmCancel}
+      >
+        <p className="text-xs text-gray-600 leading-relaxed">
+          Apakah Anda yakin ingin membatalkan pesanan{' '}
+          <span className="font-semibold text-gray-900">
+            &quot;{invoiceNumber}&quot;
+          </span>
+          ? Stok produk yang terkunci akan otomatis dikembalikan ke etalase utama.
+        </p>
+      </Modal>
     </div>
   );
 }
