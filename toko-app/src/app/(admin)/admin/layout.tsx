@@ -1,4 +1,3 @@
-import React from 'react';
 import { AdminSidebar } from '@/modules/admin/components/AdminSidebar';
 
 export const metadata = {
@@ -11,6 +10,7 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Auth pages (login/register) skip the sidebar via client component check in page
   return (
     <div className="flex min-h-screen bg-white text-gray-900 font-sans antialiased">
       <AdminSidebar />
