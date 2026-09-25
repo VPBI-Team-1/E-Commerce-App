@@ -12,5 +12,23 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  app:
+    build: .
+    container_name: bytestore-app
+    restart: always
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@db:5432/bytestore?schema=public"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    command: >
+      sh -c "
+        npx prisma db push &&
+        npm run start
+      "
+
 volumes:
   postgres_data:
