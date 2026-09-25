@@ -1,14 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { LuSearch, LuShoppingCart, LuUser } from "react-icons/lu";
 
 export default function StoreHeader() {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // kondisi sementara sebelum ada login
-  const isLoggedIn = false;
+  const checkLogin = useCallback(() => {
+    const user = localStorage.getItem("user");
+    setIsLoggedIn(!!user);
+  }, []);
+
+  useEffect(() => {
+    checkLogin();
+  }, [checkLogin]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    setIsLoggedIn(false);
+    setIsPopupOpen(false);
+    window.location.href = "/";
+  };
 
   return (
     <header className="border-b border-gray-200 bg-white">
@@ -95,12 +109,12 @@ export default function StoreHeader() {
                       Akun Saya
                     </Link>
 
-                    <Link
-                      href="/login"
-                      className="block rounded-lg px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 hover:text-primary"
+                    <button
+                      onClick={handleLogout}
+                      className="block w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 hover:text-primary"
                     >
                       Log Out
-                    </Link>
+                    </button>
                   </div>
                 </div>
               )}
