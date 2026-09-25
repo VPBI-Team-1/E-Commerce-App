@@ -161,6 +161,15 @@ export default function AdminRegisterPage() {
             </button>
           </form>
 
+          <p className="mt-4 text-center text-sm text-gray-500">
+            <Link
+              href="/login"
+              className="text-primary underline-offset-2 hover:underline"
+            >
+              Masuk sebagai Member
+            </Link>
+          </p>
+
           <p className="mt-6 text-center text-sm text-gray-500">
             Sudah punya akun?{" "}
             <Link
