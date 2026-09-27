@@ -2,6 +2,7 @@ import Image from "next/image";
 import prisma from "@/lib/prisma";
 import Link from "next/link";
 import { LuTruck, LuShield, LuHeadphones } from "react-icons/lu";
+import UserGreeting from "@/components/UserGreeting";
 
 type HomePageProps = {
   searchParams: Promise<{
@@ -79,7 +80,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             <p className="mb-4 inline-flex rounded-full border border-white/70 bg-white/70 px-4 py-2 text-xs font-bold uppercase tracking-wider text-blue-700 shadow-md backdrop-blur-sm sm:text-sm">
               Toko Produk & Periferal Komputer
             </p>
-
+            <div>
+              <UserGreeting />
+            </div>
             <h1 className="max-w-xl text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
               Upgrade Setup, Tingkatkan Performa
             </h1>
