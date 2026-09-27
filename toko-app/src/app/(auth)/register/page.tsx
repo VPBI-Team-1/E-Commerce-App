@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, RegisterInput } from "@/schemas/auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { registerAction } from "./actions";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -31,18 +32,20 @@ export default function RegisterPage() {
     setApiError(null);
 
     try {
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          name: data.name,
-          email: data.email,
-          role: data.role,
-        }),
-      );
+      const result = await registerAction(data);
 
-      router.push("/");
+      console.log("Response dari Server Action:", result);
+
+      if (result?.error) {
+        setApiError(result.error);
+      } else if (result?.success) {
+        router.push(`/verify?email=${encodeURIComponent(result.email)}`);
+      } else {
+        setApiError("Server tidak mengembalikan respon yang valid.");
+      }
     } catch (err) {
-      setApiError("Terjadi kesalahan. Silakan coba lagi.");
+      console.error("Client Submit Error:", err);
+      setApiError("Terjadi kesalahan koneksi atau jaringan.");
     } finally {
       setIsLoading(false);
     }
@@ -52,7 +55,7 @@ export default function RegisterPage() {
     <div className="mb-12 flex min-h-[calc(100vh-200px)] items-center justify-center">
       <div className="w-full max-w-md">
         {/* Logo */}
-        <div className="flex justify-center mb-6">
+        <div className="mb-6 flex justify-center">
           <Link href="/" className="inline-flex items-center gap-3">
             <span className="rounded-lg bg-primary px-3 py-1 text-2xl font-bold text-white">
               B
@@ -68,7 +71,7 @@ export default function RegisterPage() {
             Buat Akun Baru
           </h1>
           <p className="mb-6 text-center text-sm text-gray-500">
-            Daftar untuk mulai berbelanja.
+            Lengkapi data di bawah untuk mendaftar.
           </p>
 
           {apiError && (
@@ -88,7 +91,7 @@ export default function RegisterPage() {
               <input
                 id="name"
                 type="text"
-                placeholder="John Doe"
+                placeholder="Nama Lengkap"
                 {...register("name")}
                 disabled={isLoading}
                 className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm outline-none transition ${
@@ -98,7 +101,9 @@ export default function RegisterPage() {
                 } focus:ring-2`}
               />
               {errors.name && (
-                <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.name.message}
+                </p>
               )}
             </div>
 
@@ -122,7 +127,9 @@ export default function RegisterPage() {
                 } focus:ring-2`}
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.email.message}
+                </p>
               )}
             </div>
 
@@ -136,7 +143,7 @@ export default function RegisterPage() {
               <input
                 id="password"
                 type="password"
-                placeholder="Minimal 6 karakter"
+                placeholder="Masukkan password"
                 {...register("password")}
                 disabled={isLoading}
                 className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm outline-none transition ${
@@ -146,7 +153,9 @@ export default function RegisterPage() {
                 } focus:ring-2`}
               />
               {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.password.message}
+                </p>
               )}
             </div>
 
@@ -163,18 +172,8 @@ export default function RegisterPage() {
 
           <p className="mt-6 text-center text-sm text-gray-500">
             Sudah punya akun?{" "}
-            <Link
-              href="/login"
-              className="text-primary hover:underline"
-            >
+            <Link href="/login" className="text-primary hover:underline">
               Masuk
-            </Link>
-            <span className="mx-2 text-gray-300">|</span>
-            <Link
-              href="/admin/register"
-              className="text-primary hover:underline"
-            >
-              Daftar sebagai Admin
             </Link>
           </p>
         </div>
