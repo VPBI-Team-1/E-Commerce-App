@@ -6,11 +6,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, LoginInput } from "@/schemas/auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { loginAction } from "./actions";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const { refreshUser } = useAuth();
 
   const {
     register,
@@ -26,17 +29,26 @@ export default function LoginPage() {
     setApiError(null);
 
     try {
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          email: data.email,
-          role: data.role,
-          name: data.email.split("@")[0],
-        }),
-      );
+      const result = await loginAction(data);
 
-      router.push("/");
+      if (result?.error) {
+        setApiError(result.error);
+
+        if (result.needsVerification && result.email) {
+          setTimeout(() => {
+            router.push(
+              `/verify-otp?email=${encodeURIComponent(result.email!)}`,
+            );
+          }, 2000);
+        }
+      } else if (result?.success) {
+        await refreshUser();
+
+        router.push("/");
+        router.refresh();
+      }
     } catch (err) {
+      console.error("Error : ", err);
       setApiError("Terjadi kesalahan. Silakan coba lagi.");
     } finally {
       setIsLoading(false);
@@ -47,7 +59,7 @@ export default function LoginPage() {
     <div className="mb-12 flex min-h-[calc(100vh-200px)] items-center justify-center">
       <div className="w-full max-w-md">
         {/* Logo */}
-        <div className="flex justify-center mb-6">
+        <div className="mb-6 flex justify-center">
           <Link href="/" className="inline-flex items-center gap-3">
             <span className="rounded-lg bg-primary px-3 py-1 text-2xl font-bold text-white">
               B
@@ -93,7 +105,9 @@ export default function LoginPage() {
                 } focus:ring-2`}
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.email.message}
+                </p>
               )}
             </div>
 
@@ -117,7 +131,9 @@ export default function LoginPage() {
                 } focus:ring-2`}
               />
               {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.password.message}
+                </p>
               )}
             </div>
 
@@ -134,17 +150,11 @@ export default function LoginPage() {
 
           <p className="mt-6 text-center text-sm text-gray-500">
             Belum punya akun?{" "}
-            <Link
-              href="/register"
-              className="text-primary hover:underline"
-            >
+            <Link href="/register" className="text-primary hover:underline">
               Daftar
             </Link>
             <span className="mx-2 text-gray-300">|</span>
-            <Link
-              href="/admin/login"
-              className="text-primary hover:underline"
-            >
+            <Link href="/admin/login" className="text-primary hover:underline">
               Masuk sebagai Admin
             </Link>
           </p>
