@@ -1,6 +1,6 @@
 import React from "react";
-import StoreHeader from "@/components/Store/StoreHeader";
-import StoreFooter from "@/components/Store/StoreFooter";
+import Header from "@/components/Store/Header";
+import Footer from "@/components/Store/Footer";
 
 export default function StoreLayout({
   children,
@@ -9,11 +9,11 @@ export default function StoreLayout({
 }) {
   return (
     <div>
-      <StoreHeader />
+      <Header />
 
-      <main>{children}</main>
+      <main className="bg-gray-50">{children}</main>
 
-      <StoreFooter />
+      <Footer />
     </div>
   );
 }
