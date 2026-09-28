@@ -15,7 +15,7 @@ const navigationLinks = [
   { label: "Kontak", href: "/contact" },
 ];
 
-export default function StoreFooter() {
+export default function Footer() {
   return (
     <footer className="bg-blue-950 text-white">
       <div className="mx-auto grid max-w-7xl gap-10 px-6 py-12 md:grid-cols-3">

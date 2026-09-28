@@ -1,27 +1,45 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
 import { LuSearch, LuShoppingCart, LuUser } from "react-icons/lu";
 
-export default function StoreHeader() {
+const AUTH_CHANGE_EVENT = "bytestore-auth-change";
+
+function subscribeToAuth(callback: () => void) {
+  window.addEventListener("storage", callback);
+  window.addEventListener(AUTH_CHANGE_EVENT, callback);
+
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener(AUTH_CHANGE_EVENT, callback);
+  };
+}
+
+function getAuthSnapshot() {
+  return Boolean(localStorage.getItem("user"));
+}
+
+function getServerAuthSnapshot() {
+  return false;
+}
+
+export default function Header() {
+  const router = useRouter();
   const [isPopupOpen, setIsPopupOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const checkLogin = useCallback(() => {
-    const user = localStorage.getItem("user");
-    setIsLoggedIn(!!user);
-  }, []);
-
-  useEffect(() => {
-    checkLogin();
-  }, [checkLogin]);
+  const isLoggedIn = useSyncExternalStore(
+    subscribeToAuth,
+    getAuthSnapshot,
+    getServerAuthSnapshot,
+  );
 
   const handleLogout = () => {
     localStorage.removeItem("user");
-    setIsLoggedIn(false);
+    window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
     setIsPopupOpen(false);
-    window.location.href = "/";
+    router.push("/");
   };
 
   return (

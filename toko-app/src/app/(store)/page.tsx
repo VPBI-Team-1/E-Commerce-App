@@ -62,7 +62,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   });
 
   return (
-    <>
+    <div className="bg-white">
       {/* Hero section */}
       <section className="relative isolate min-h-105 overflow-hidden text-blue-950 sm:min-h-115 lg:min-h-130">
         <Image
@@ -214,7 +214,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                     href={`/products/${product.id}`}
                     className="mt-5 block rounded-lg bg-gray-900 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-blue-700"
                   >
-                    Pesan Sekarang
+                    Lihat Detail
                   </Link>
                 </div>
               </article>
@@ -281,6 +281,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }
