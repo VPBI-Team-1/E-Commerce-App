@@ -3,6 +3,7 @@
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { categorySchema } from '@/schemas/category';
+import { verifyAdminServerAction } from '@/lib/server-auth';
 
 export interface ActionResponse<T = unknown> {
   success: boolean;
@@ -15,6 +16,9 @@ export interface ActionResponse<T = unknown> {
  * Server Action: Membuat kategori atau subkategori baru.
  */
 export async function createCategory(payload: unknown): Promise<ActionResponse> {
+  const authCheck = await verifyAdminServerAction();
+  if (!authCheck.success) return { success: false, error: authCheck.error };
+
   const parsed = categorySchema.safeParse(payload);
   if (!parsed.success) {
     const errorMessage = parsed.error.issues[0]?.message || 'Data kategori tidak valid.';
@@ -83,6 +87,9 @@ export async function updateCategory(
   id: string,
   payload: unknown
 ): Promise<ActionResponse> {
+  const authCheck = await verifyAdminServerAction();
+  if (!authCheck.success) return { success: false, error: authCheck.error };
+
   if (!id || typeof id !== 'string' || id.trim() === '') {
     return { success: false, error: 'ID kategori tidak valid.' };
   }
@@ -179,6 +186,9 @@ export async function updateCategory(
  * Server Action: Menghapus kategori produk dengan Guard Clauses.
  */
 export async function deleteCategory(id: string): Promise<ActionResponse> {
+  const authCheck = await verifyAdminServerAction();
+  if (!authCheck.success) return { success: false, error: authCheck.error };
+
   if (!id || typeof id !== 'string' || id.trim() === '') {
     return { success: false, error: 'ID kategori tidak valid.' };
   }

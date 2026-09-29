@@ -3,6 +3,8 @@ import Image from "next/image";
 import ProductActions from "@/components/ProductActions";
 
 import { LuTruck, LuShield, LuHeadphones } from "react-icons/lu";
+import ProductDetailView from "@/components/Product/ProductDetailView";
+import { notFound } from "next/navigation";
 
 type ProductDetailPageProps = {
   params: Promise<{
@@ -161,5 +163,54 @@ export default async function ProductDetailPage({
         </div>
       </section>
     </>
+    notFound();
+  }
+
+  const recommendations = await prisma.product.findMany({
+    where: {
+      id: { not: product.id },
+      categoryId: product.categoryId,
+      isArchived: false,
+    },
+    take: 3,
+    orderBy: {
+      createdAt: "desc",
+    },
+    include: {
+      variants: {
+        orderBy: {
+          price: "asc",
+        },
+        take: 1,
+      },
+      images: {
+        orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }],
+        take: 1,
+      },
+    },
+  });
+
+  const serializedProduct = {
+    ...product,
+    variants: product.variants.map((v) => ({
+      ...v,
+      price: Number(v.price),
+    })),
+  };
+
+  const serializedRecommendations = recommendations.map((item) => ({
+    ...item,
+    variants: item.variants.map((v) => ({
+      ...v,
+      price: Number(v.price),
+    })),
+  }));
+
+  return (
+    <ProductDetailView
+      product={serializedProduct}
+      recommendations={serializedRecommendations}
+      isPreview={false}
+    />
   );
 }

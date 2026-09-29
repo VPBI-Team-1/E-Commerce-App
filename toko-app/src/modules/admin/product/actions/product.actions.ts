@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { productSchema } from '@/schemas/product';
 import { storageService } from '@/lib/storage';
+import { verifyAdminServerAction } from '@/lib/server-auth';
 
 export interface ActionResponse<T = unknown> {
   success: boolean;
@@ -21,6 +22,9 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 export async function uploadProductImageAction(
   formData: FormData
 ): Promise<ActionResponse<{ url: string }>> {
+  const authCheck = await verifyAdminServerAction();
+  if (!authCheck.success) return { success: false, error: authCheck.error };
+
   const file = formData.get('file');
 
   if (!file || !(file instanceof File)) {
@@ -57,6 +61,9 @@ export async function uploadProductImageAction(
  * Server Action: Membuat produk baru beserta varian dan gambarnya.
  */
 export async function createProduct(payload: unknown): Promise<ActionResponse<{ id: string }>> {
+  const authCheck = await verifyAdminServerAction();
+  if (!authCheck.success) return { success: false, error: authCheck.error };
+
   const parsed = productSchema.safeParse(payload);
   if (!parsed.success) {
     const errorMessage = parsed.error.issues[0]?.message || 'Data formulir produk tidak valid.';
@@ -140,6 +147,9 @@ export async function updateProduct(
   id: string,
   payload: unknown
 ): Promise<ActionResponse<{ id: string }>> {
+  const authCheck = await verifyAdminServerAction();
+  if (!authCheck.success) return { success: false, error: authCheck.error };
+
   if (!id || typeof id !== 'string' || id.trim() === '') {
     return { success: false, error: 'ID produk tidak valid.' };
   }
@@ -285,6 +295,9 @@ export async function archiveProduct(
   productId: string,
   isArchived: boolean = true
 ): Promise<ActionResponse> {
+  const authCheck = await verifyAdminServerAction();
+  if (!authCheck.success) return { success: false, error: authCheck.error };
+
   if (!productId || typeof productId !== 'string' || productId.trim() === '') {
     return { success: false, error: 'ID produk tidak valid.' };
   }
