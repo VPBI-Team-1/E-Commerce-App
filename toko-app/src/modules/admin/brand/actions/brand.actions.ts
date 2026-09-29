@@ -3,6 +3,7 @@
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { brandSchema } from '@/schemas/brand';
+import { verifyAdminServerAction } from '@/lib/server-auth';
 
 export interface ActionResponse<T = unknown> {
   success: boolean;
@@ -17,6 +18,9 @@ export interface ActionResponse<T = unknown> {
 export async function createBrand(
   payload: unknown
 ): Promise<ActionResponse<{ id: string; name: string }>> {
+  const authCheck = await verifyAdminServerAction();
+  if (!authCheck.success) return { success: false, error: authCheck.error };
+
   const parsed = brandSchema.safeParse(payload);
   if (!parsed.success) {
     const errorMessage =
@@ -68,6 +72,9 @@ export async function updateBrand(
   id: string,
   payload: unknown
 ): Promise<ActionResponse<{ id: string; name: string }>> {
+  const authCheck = await verifyAdminServerAction();
+  if (!authCheck.success) return { success: false, error: authCheck.error };
+
   if (!id || typeof id !== 'string' || id.trim() === '') {
     return { success: false, error: 'ID brand tidak valid.' };
   }
@@ -132,6 +139,9 @@ export async function updateBrand(
  * - Brand yang memiliki produk tidak boleh dihapus (onDelete: Restrict).
  */
 export async function deleteBrand(id: string): Promise<ActionResponse> {
+  const authCheck = await verifyAdminServerAction();
+  if (!authCheck.success) return { success: false, error: authCheck.error };
+
   if (!id || typeof id !== 'string' || id.trim() === '') {
     return { success: false, error: 'ID brand tidak valid.' };
   }
