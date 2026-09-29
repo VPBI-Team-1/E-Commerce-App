@@ -8,10 +8,10 @@ export default function StoreLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div>
+    <div className="flex flex-col min-h-screen">
       <Header />
 
-      <main className="bg-gray-50">{children}</main>
+      <main className="bg-gray-50 flex-1">{children}</main>
 
       <Footer />
     </div>
