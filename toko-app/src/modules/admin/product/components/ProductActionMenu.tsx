@@ -9,6 +9,7 @@ import {
   EllipsisVerticalIcon,
   ArchiveBoxIcon,
   ArrowPathIcon,
+  EyeIcon,
 } from '@heroicons/react/24/outline';
 
 interface ProductActionMenuProps {
@@ -108,13 +109,24 @@ export function ProductActionMenu({
                 openUpwards ? 'bottom-full mb-1' : 'top-full mt-1'
               } w-36 rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5 z-20 border border-gray-100 text-left`}
             >
+              {/* Opsi Preview Produk */}
+              <Link
+                href={`/admin/products/${productId}/preview`}
+                onClick={() => setIsDropdownOpen(false)}
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors cursor-pointer text-left text-gray-700 hover:bg-gray-50 hover:text-blue-600"
+              >
+                <EyeIcon className="w-4 h-4 shrink-0" />
+                <span>Preview</span>
+              </Link>
+
+              {/* Opsi Arsipkan / Pulihkan */}
               <button
                 type="button"
                 onClick={() => {
                   setIsDropdownOpen(false);
                   handleOpenModal();
                 }}
-                className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors cursor-pointer text-left ${
+                className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors cursor-pointer text-left border-t border-gray-100 ${
                   isArchived
                     ? 'text-emerald-600 hover:bg-emerald-50'
                     : 'text-gray-700 hover:bg-gray-50 hover:text-amber-600'

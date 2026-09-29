@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { LuMinus, LuPlus } from "react-icons/lu";
 
-type QuantitySelectorProps = {
+export type QuantitySelectorProps = {
   stock: number;
 };
 
