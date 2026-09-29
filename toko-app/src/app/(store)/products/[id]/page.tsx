@@ -1,14 +1,8 @@
 import prisma from "@/lib/prisma";
 import Image from "next/image";
-import Link from "next/link";
+import ProductActions from "@/components/ProductActions";
 
-import {
-  LuShoppingCart,
-  LuZap,
-  LuTruck,
-  LuShield,
-  LuHeadphones,
-} from "react-icons/lu";
+import { LuTruck, LuShield, LuHeadphones } from "react-icons/lu";
 
 type ProductDetailPageProps = {
   params: Promise<{
@@ -46,16 +40,24 @@ export default async function ProductDetailPage({
   });
 
   if (!product) {
-    return <p>Produk tidak ditemukan</p>;
+    return (
+      <div className="py-20 text-center">
+        <p className="text-lg text-gray-500">Produk tidak ditemukan</p>
+      </div>
+    );
   }
 
   const mainImage = product.images[0];
-  const cheapestVariant = product.variants[0];
 
+  const serializedVariants = product.variants.map((variant) => ({
+    ...variant,
+    price: Number(variant.price),
+  }));
   return (
     <>
       <section className="mx-auto max-w-7xl px-6 py-12">
         <div className="grid gap-10 lg:grid-cols-2">
+          {/* Gambar Produk */}
           <div className="relative aspect-square overflow-hidden rounded-xl bg-gray-100">
             {mainImage ? (
               <Image
@@ -71,13 +73,14 @@ export default async function ProductDetailPage({
             )}
           </div>
 
+          {/* Info & Aksi Produk */}
           <div>
             <div className="flex items-center gap-3">
-              <span className="rounded-full border border-white/70 bg-blue-100/70 px-4 py-2 text-primary font-semibold">
+              <span className="rounded-full border border-white/70 bg-blue-100/70 px-4 py-2 font-semibold text-primary">
                 {product.brand.name}
               </span>
 
-              <span className="rounded-full border border-white/70 bg-blue-100/70 px-4 py-2 text-primary font-semibold">
+              <span className="rounded-full border border-white/70 bg-blue-100/70 px-4 py-2 font-semibold text-primary">
                 {product.category.name}
               </span>
             </div>
@@ -85,12 +88,6 @@ export default async function ProductDetailPage({
             <h1 className="mt-2 text-3xl font-bold text-gray-900">
               {product.name}
             </h1>
-
-            <p className="mt-5 text-2xl font-bold text-blue-600">
-              {cheapestVariant
-                ? `Rp ${Number(cheapestVariant.price).toLocaleString("id-ID")}`
-                : "Harga belum tersedia"}
-            </p>
 
             <p className="mt-6 leading-7 text-gray-600">
               {product.description}
@@ -102,39 +99,11 @@ export default async function ProductDetailPage({
               </p>
             )}
 
-            <div className="mt-8">
-              <h2 className="font-semibold">Pilihan Varian</h2>
-
-              <div className="mt-3 space-y-2">
-                {product.variants.map((variant) => (
-                  <div
-                    key={variant.id}
-                    className="flex items-center justify-between rounded-lg border border-gray-200 p-4"
-                  >
-                    <span>{variant.name}</span>
-                    <input type="radio" name={product.name} id={product.id} />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-8">
-              <Link
-                href="/cart"
-                className="flex items-center justify-center gap-2 px-5 py-3 font-semibold rounded-lg border border-primary text-primary transition-colors hover:border-primary hover:bg-blue-50 hover:text-primary flex-1"
-              >
-                <LuShoppingCart className="text-2xl" />
-                Tambah ke Keranjang
-              </Link>
-
-              <Link
-                href="/payment"
-                className="flex items-center justify-center gap-2 px-5 py-3 font-semibold rounded-lg border border-primary bg-primary text-white transition-colors hover:bg-blue-700 flex-1"
-              >
-                <LuZap className="text-2xl" />
-                Pesan Sekarang
-              </Link>
-            </div>
+            {/* Komponen Interaktif (Harga, Varian, Jumlah, Tambah ke Keranjang) */}
+            <ProductActions
+              productId={product.id}
+              variants={serializedVariants}
+            />
           </div>
         </div>
       </section>
@@ -159,11 +128,9 @@ export default async function ProductDetailPage({
         <div className="mt-10 grid gap-5 md:grid-cols-3">
           <div className="rounded-lg border border-blue-100 bg-blue-50 p-6">
             <LuTruck className="h-9 w-9 text-blue-700" />
-
             <h3 className="mt-5 font-semibold text-blue-950">
               Pengiriman Cepat
             </h3>
-
             <p className="mt-2 text-sm leading-6 text-gray-600">
               Produk dikemas dengan aman dan dikirim secepat mungkin sampai ke
               tangan kamu.
@@ -172,11 +139,9 @@ export default async function ProductDetailPage({
 
           <div className="rounded-lg border border-blue-100 bg-blue-50 p-6">
             <LuShield className="h-9 w-9 text-blue-700" />
-
             <h3 className="mt-5 font-semibold text-blue-950">
               Produk Original
             </h3>
-
             <p className="mt-2 text-sm leading-6 text-gray-600">
               Semua produk berasal dari brand terpercaya dan memiliki garansi
               resmi.
@@ -185,11 +150,9 @@ export default async function ProductDetailPage({
 
           <div className="rounded-lg border border-blue-100 bg-blue-50 p-6">
             <LuHeadphones className="h-9 w-9 text-blue-700" />
-
             <h3 className="mt-5 font-semibold text-blue-950">
               Layanan Pelanggan
             </h3>
-
             <p className="mt-2 text-sm leading-6 text-gray-600">
               Tim kami siap membantu menjawab pertanyaan dan kebutuhan belanja
               kamu.
