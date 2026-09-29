@@ -6,36 +6,81 @@ import {
   CubeIcon,
   UsersIcon,
 } from '@heroicons/react/24/outline';
+import { SalesChart, DailySalesData } from '@/modules/admin/dashboard/components/SalesChart';
+import { RecentOrders, RecentOrderItem } from '@/modules/admin/dashboard/components/RecentOrders';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboardPage() {
-  const [salesAggregate, totalOrders, activeProducts, totalCustomers] =
-    await Promise.all([
-      prisma.order.aggregate({
-        where: {
-          status: {
-            in: [OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.COMPLETED],
+  const today = new Date();
+  const sevenDaysAgo = new Date(today);
+  sevenDaysAgo.setDate(today.getDate() - 6);
+  sevenDaysAgo.setHours(0, 0, 0, 0);
+
+  const [
+    salesAggregate,
+    totalOrders,
+    activeProducts,
+    totalCustomers,
+    recentOrdersRaw,
+    paidOrdersLast7Days,
+  ] = await Promise.all([
+    prisma.order.aggregate({
+      where: {
+        status: {
+          in: [OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.COMPLETED],
+        },
+      },
+      _sum: {
+        totalAmount: true,
+      },
+    }),
+    prisma.order.count({
+      where: {
+        status: {
+          not: OrderStatus.CANCELLED,
+        },
+      },
+    }),
+    prisma.product.count({
+      where: { isArchived: false },
+    }),
+    prisma.user.count({
+      where: { role: 'CUSTOMER' },
+    }),
+    prisma.order.findMany({
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
           },
         },
-        _sum: {
-          totalAmount: true,
-        },
-      }),
-      prisma.order.count({
-        where: {
-          status: {
-            not: OrderStatus.CANCELLED,
+        _count: {
+          select: {
+            items: true,
           },
         },
-      }),
-      prisma.product.count({
-        where: { isArchived: false },
-      }),
-      prisma.user.count({
-        where: { role: 'CUSTOMER' },
-      }),
-    ]);
+      },
+    }),
+    prisma.order.findMany({
+      where: {
+        status: {
+          in: [OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.COMPLETED],
+        },
+        createdAt: {
+          gte: sevenDaysAgo,
+        },
+      },
+      select: {
+        totalAmount: true,
+        createdAt: true,
+      },
+    }),
+  ]);
 
   const totalSalesAmount = salesAggregate._sum.totalAmount
     ? Number(salesAggregate._sum.totalAmount)
@@ -48,6 +93,49 @@ export default async function AdminDashboardPage() {
       maximumFractionDigits: 0,
     }).format(val);
   };
+
+  // Build daily sales data for the last 7 days
+  const daysMap = new Map<string, { totalSales: number; orderCount: number; label: string }>();
+
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    const label = new Intl.DateTimeFormat('id-ID', {
+      day: 'numeric',
+      month: 'short',
+    }).format(d);
+
+    daysMap.set(key, { totalSales: 0, orderCount: 0, label });
+  }
+
+  paidOrdersLast7Days.forEach((order) => {
+    const key = new Date(order.createdAt).toISOString().slice(0, 10);
+    if (daysMap.has(key)) {
+      const existing = daysMap.get(key)!;
+      existing.totalSales += Number(order.totalAmount);
+      existing.orderCount += 1;
+    }
+  });
+
+  const salesChartData: DailySalesData[] = Array.from(daysMap.entries()).map(
+    ([rawDate, val]) => ({
+      rawDate,
+      date: val.label,
+      totalSales: val.totalSales,
+      orderCount: val.orderCount,
+    })
+  );
+
+  const formattedRecentOrders: RecentOrderItem[] = recentOrdersRaw.map((o) => ({
+    id: o.id,
+    invoiceNumber: o.invoiceNumber,
+    status: o.status,
+    totalAmount: Number(o.totalAmount),
+    createdAt: o.createdAt,
+    user: o.user,
+    itemCount: o._count.items,
+  }));
 
   const statCards = [
     {
@@ -88,7 +176,7 @@ export default async function AdminDashboardPage() {
         </p>
       </div>
 
-      {/* Stats Cards - Minimalist Flat */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((stat) => {
           const Icon = stat.icon;
@@ -111,6 +199,13 @@ export default async function AdminDashboardPage() {
           );
         })}
       </div>
+
+      {/* Sales Trend Chart */}
+      <SalesChart data={salesChartData} />
+
+      {/* Recent Orders Table */}
+      <RecentOrders orders={formattedRecentOrders} />
     </div>
   );
 }
+

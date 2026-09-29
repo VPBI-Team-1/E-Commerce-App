@@ -31,7 +31,24 @@ Bilah samping `AdminSidebar` memuat tautan menuju lima area kerja admin:
 
 Komponen mendeteksi rute halaman yang sedang aktif menggunakan pustaka `usePathname` dari Next.js untuk menyorot latar belakang menu yang dipilih, sehingga staf toko selalu memahami posisi halaman kerja mereka saat ini.
 
-### 4. Pemisahan Hak Akses (Role-Based Redirect)
+### 4. Visualisasi Grafik Penjualan (SalesChart)
+Untuk memantau performa bisnis dari waktu ke waktu, dashboard dilengkapi komponen visualisasi `SalesChart` berbasis pustaka `recharts`:
+- Menggunakan diagram area (*AreaChart*) responsif yang menampilkan agregasi nilai penjualan harian selama 7 hari terakhir.
+- Sumber Data: Menghitung total nilai pesanan lunas (*PAID*, *SHIPPED*, *COMPLETED*) yang masuk dalam jendela 7 hari terakhir.
+- Penanganan Kondisi UI (*UI States*):
+  - *Loading State*: Menampilkan kerangka visual (*skeleton shimmer*) saat grafik sedang memuat atau proses hidrasi sisi klien.
+  - *Empty State*: Menampilkan pesan informatif jika belum ada catatan transaksi penjualan pada periode tersebut.
+  - *Error State*: Menampilkan kartu peringatan jika terjadi kegagalan pengambilan data.
+- Tooltip Interaktif: Menampilkan rincian nominal penjualan dalam format Rupiah dan jumlah pesanan yang terselesaikan pada tanggal terkait.
+
+### 5. Tabel Pesanan Terbaru (RecentOrders)
+Di bawah grafik penjualan, terdapat tabel ringkas `RecentOrders` yang menampilkan 5 transaksi pesanan terakhir:
+- Menyajikan ringkasan informasi berupa nomor faktur (*Invoice*), tanggal transaksi, nama dan email pelanggan, total tagihan beserta jumlah item, status pesanan dengan lencana warna (*OrderStatusBadge*), dan tombol pintasan menuju halaman detail pesanan.
+- Tautan "Lihat Semua Pesanan" di bagian pojok kanan atas tabel mengarahkan admin langsung ke halaman `/admin/orders` untuk pengelolaan transaksi lebih lanjut.
+- Penanganan Kondisi UI (*UI States*): Mendukung tampilan memuat (*loading skeleton*) serta tampilan kosong jika belum ada pesanan yang masuk ke toko.
+
+### 6. Pemisahan Hak Akses (Role-Based Redirect)
 Sistem memisahkan peran pengguna secara tegas antara Admin dan Pelanggan (*Customer*).
 
 Akun dengan peran Admin dikhususkan murni untuk mengelola operasional toko. Sesi login yang terdeteksi memiliki peran Admin akan dicegah membuka halaman belanja khusus pembeli (seperti Keranjang Belanja, formulir Checkout, atau Profil Pelanggan). Jika staf mencoba membuka rute-rute tersebut, sistem di lapisan middleware dan server akan langsung mengalihkan (*redirect*) peramban kembali ke halaman Dashboard Admin (`/admin`). Perlindungan ini mencegah akun staf melakukan transaksi belanja tidak sengaja menggunakan akun operasional toko.
+
