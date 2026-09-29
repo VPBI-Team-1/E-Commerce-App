@@ -56,10 +56,13 @@ export function AdminSidebar() {
   return (
     <aside className="w-64 shrink-0 border-r border-gray-200 bg-white flex flex-col min-h-screen">
       {/* Brand Header */}
-      <div className="h-16 flex items-center px-6 bg-primary border-b border-gray-200">
-        <Link href="/admin">
-          <span className="font-bold text-lg tracking-tight text-white">
-            ByteStore
+      <div className="h-16 flex items-center px-6 bg-white border-b border-gray-200">
+        <Link href="/admin" className="inline-flex items-center gap-3">
+          <span className="rounded-lg bg-primary px-3 py-1 text-2xl font-bold text-white">
+            B
+          </span>
+          <span className="text-2xl font-bold text-gray-900">
+            Byte<span className="text-primary">Store</span>
           </span>
         </Link>
       </div>
