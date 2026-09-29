@@ -10,6 +10,7 @@ import {
   LuHeadphones,
 } from "react-icons/lu";
 import QuantitySelector from "./QuantitySelector";
+import LinkButton from "@/components/Store/LinkButton";
 
 type ProductDetailPageProps = {
   params: Promise<{
@@ -84,8 +85,33 @@ export default async function ProductDetailPage({
 
   const isAvailable = totalStock > 0;
 
+  const productBenefits = [
+    {
+      icon: LuTruck,
+      title: "Pengiriman Cepat",
+      description: "1-3 hari kerja",
+    },
+    {
+      icon: LuShieldCheck,
+      title: "Produk Original",
+      description: "Garansi resmi",
+    },
+    {
+      icon: LuHeadphones,
+      title: "Layanan Pelanggan",
+      description: "Siap membantu",
+    },
+  ];
+
+  const productSpecifications = [
+    { label: "Kategori", value: product.category.name },
+    { label: "Brand", value: product.brand.name },
+    { label: "Jumlah varian", value: `${product.variants.length} varian` },
+    { label: "Total stok", value: `${totalStock} unit` },
+  ];
+
   return (
-    <div className="py-4">
+    <div className="lg:py-4">
       {/* gambar dan tombol navigasi */}
       <section className="mx-auto max-w-7xl p-6 bg-white rounded-lg">
         <div className="grid gap-10 lg:grid-cols-2">
@@ -199,60 +225,30 @@ export default async function ProductDetailPage({
             <QuantitySelector stock={cheapestVariant?.stock ?? 0} />
 
             <div className="mt-8 grid gap-3 sm:grid-cols-2">
-              <Link
-                href="/cart"
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-blue-700 px-4 py-3 text-center text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-50"
-              >
+              <LinkButton href="/cart" variant="outline">
                 <LuShoppingCart className="h-5 w-5 shrink-0" />
                 Tambah ke Keranjang
-              </Link>
+              </LinkButton>
 
-              <Link
-                href="/payment"
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-blue-700 px-4 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-blue-800"
-              >
+              <LinkButton href="/payment" variant="primary">
                 <LuZap className="h-5 w-5 shrink-0" />
                 Pesan Sekarang
-              </Link>
+              </LinkButton>
             </div>
 
             <div className="mt-8 grid gap-4 border-t border-gray-200 pt-6 sm:grid-cols-3">
-              <div className="flex items-start gap-3">
-                <span className="rounded-full bg-blue-50 p-2 text-blue-800">
-                  <LuTruck className="h-5 w-5" />
-                </span>
+              {productBenefits.map(({ icon: Icon, title, description }) => (
+                <div key={title} className="flex items-start gap-3">
+                  <span className="rounded-full bg-blue-50 p-2 text-blue-800">
+                    <Icon aria-hidden="true" className="h-5 w-5" />
+                  </span>
 
-                <div className="text-sm">
-                  <p className="font-semibold text-gray-900">
-                    Pengiriman Cepat
-                  </p>
-                  <p className="mt-1 text-gray-500">1-3 hari kerja</p>
+                  <div className="text-sm">
+                    <p className="font-semibold text-gray-900">{title}</p>
+                    <p className="mt-1 text-gray-500">{description}</p>
+                  </div>
                 </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <span className="rounded-full bg-blue-50 p-2 text-blue-800">
-                  <LuShieldCheck className="h-5 w-5" />
-                </span>
-
-                <div className="text-sm">
-                  <p className="font-semibold text-gray-900">Produk Original</p>
-                  <p className="mt-1 text-gray-500">Garansi resmi</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <span className="rounded-full bg-blue-50 p-2 text-blue-800">
-                  <LuHeadphones className="h-5 w-5" />
-                </span>
-
-                <div className="text-sm">
-                  <p className="font-semibold text-gray-900">
-                    Layanan Pelanggan
-                  </p>
-                  <p className="mt-1 text-gray-500">Siap membantu</p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
@@ -270,31 +266,15 @@ export default async function ProductDetailPage({
             </h2>
 
             <dl className="mt-5 divide-y divide-gray-200 border-y border-gray-200">
-              <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-4 py-3 text-sm sm:grid-cols-[160px_minmax(0,1fr)]">
-                <dt className="text-gray-500">Kategori</dt>
-                <dd className="font-medium text-gray-900">
-                  {product.category.name}
-                </dd>
-              </div>
-
-              <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-4 py-3 text-sm sm:grid-cols-[160px_minmax(0,1fr)]">
-                <dt className="text-gray-500">Brand</dt>
-                <dd className="font-medium text-gray-900">
-                  {product.brand.name}
-                </dd>
-              </div>
-
-              <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-4 py-3 text-sm sm:grid-cols-[160px_minmax(0,1fr)]">
-                <dt className="text-gray-500">Jumlah varian</dt>
-                <dd className="font-medium text-gray-900">
-                  {product.variants.length} varian
-                </dd>
-              </div>
-
-              <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-4 py-3 text-sm sm:grid-cols-[160px_minmax(0,1fr)]">
-                <dt className="text-gray-500">Total stok</dt>
-                <dd className="font-medium text-gray-900">{totalStock} unit</dd>
-              </div>
+              {productSpecifications.map(({ label, value }) => (
+                <div
+                  key={label}
+                  className="grid grid-cols-[120px_minmax(0,1fr)] gap-4 py-3 text-sm sm:grid-cols-[160px_minmax(0,1fr)]"
+                >
+                  <dt className="text-gray-500">{label}</dt>
+                  <dd className="font-medium text-gray-900">{value}</dd>
+                </div>
+              ))}
             </dl>
           </section>
 

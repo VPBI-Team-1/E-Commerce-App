@@ -1,223 +1,159 @@
-import Image from "next/image";
 import prisma from "@/lib/prisma";
 import Link from "next/link";
-import { LuTruck, LuShield, LuHeadphones } from "react-icons/lu";
-import UserGreeting from "@/components/UserGreeting";
+import {
+  LuTruck,
+  LuShield,
+  LuHeadphones,
+  LuBox,
+  LuCircuitBoard,
+  LuCpu,
+  LuFan,
+  LuHardDrive,
+  LuKeyboard,
+  LuMemoryStick,
+  LuMonitor,
+  LuZap,
+} from "react-icons/lu";
+import type { IconType } from "react-icons";
+import ProductCard from "@/components/Store/ProductCard";
+import Hero from "@/components/Store/Hero";
 
-type HomePageProps = {
-  searchParams: Promise<{
-    category?: string;
-    brand?: string;
-    sort?: string;
-  }>;
+const benefits = [
+  {
+    icon: LuTruck,
+    title: "Pengiriman Cepat",
+    description:
+      "Produk dikemas dengan aman dan dikirim secepat mungkin sampai ke tangan kamu.",
+  },
+  {
+    icon: LuShield,
+    title: "Produk Original",
+    description:
+      "Semua produk berasal dari brand terpercaya dan memiliki garansi resmi.",
+  },
+  {
+    icon: LuHeadphones,
+    title: "Layanan Pelanggan",
+    description:
+      "Tim kami siap membantu menjawab pertanyaan dan kebutuhan belanja kamu.",
+  },
+];
+
+const categoryIcons: Record<string, IconType> = {
+  Processor: LuCpu,
+  Motherboard: LuCircuitBoard,
+  Casing: LuBox,
+  VGA: LuMonitor,
+  RAM: LuMemoryStick,
+  PSU: LuZap,
+  Storage: LuHardDrive,
+  "Cooler dan Fan": LuFan,
+  Monitor: LuMonitor,
+  "Keyboard dan Mouse": LuKeyboard,
+  Audio: LuHeadphones,
 };
 
-export default async function HomePage({ searchParams }: HomePageProps) {
-  const params = await searchParams;
-
+export default async function HomePage() {
   const categories = await prisma.category.findMany({
-    orderBy: {
-      name: "asc",
+    where: {
+      parentId: { not: null },
+      products: {
+        some: { isArchived: false },
+      },
     },
-  });
-
-  const brands = await prisma.brand.findMany({
-    orderBy: {
-      name: "asc",
+    orderBy: { name: "asc" },
+    select: {
+      id: true,
+      name: true,
     },
   });
 
   const products = await prisma.product.findMany({
     where: {
       isArchived: false,
-      ...(params.category
-        ? {
-            categoryId: params.category,
-          }
-        : {}),
-      ...(params.brand
-        ? {
-            brandId: params.brand,
-          }
-        : {}),
     },
     orderBy: {
-      createdAt: params.sort === "oldest" ? "asc" : "desc",
+      createdAt: "desc",
     },
     take: 12,
     include: {
       variants: {
-        orderBy: {
-          price: "asc",
-        },
+        orderBy: { price: "asc" },
         take: 1,
       },
       images: {
-        orderBy: {
-          isPrimary: "desc",
-        },
+        orderBy: { isPrimary: "desc" },
         take: 1,
       },
     },
   });
 
   return (
-    <div className="bg-white">
+    <div>
       {/* Hero section */}
-      <section className="relative isolate min-h-105 overflow-hidden text-blue-950 sm:min-h-115 lg:min-h-130">
-        <Image
-          src="/hero.jpg"
-          alt="Setup komputer ByteStore"
-          fill
-          priority
-          className="object-cover object-left sm:object-center"
-        />
+      <Hero />
 
-        <div className="absolute inset-0 bg-white/20" />
-
-        <div className="relative z-10 mx-auto flex min-h-105 max-w-7xl items-center px-6 py-12 sm:min-h-115 lg:min-h-130">
-          <div className="max-w-2xl">
-            <p className="mb-4 inline-flex rounded-full border border-white/70 bg-white/70 px-4 py-2 text-xs font-bold uppercase tracking-wider text-blue-700 shadow-md backdrop-blur-sm sm:text-sm">
-              Toko Produk & Periferal Komputer
+      <section
+        aria-labelledby="popular-categories-heading"
+        className="mx-auto max-w-7xl px-6 py-12"
+      >
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-blue-700">
+              Jelajahi katalog
             </p>
-            <div>
-              <UserGreeting />
-            </div>
-            <h1 className="max-w-xl text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-              Upgrade Setup, Tingkatkan Performa
-            </h1>
-
-            <p className="mt-5 max-w-lg text-base leading-7 text-blue-950 sm:text-lg">
-              Temukan berbagai komponen PC dan periferal terbaik untuk kebutuhan
-              gaming, kerja, dan sehari-hari.
-            </p>
-
-            <a
-              href="#produk"
-              className="mt-7 inline-flex rounded-lg bg-blue-700 px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            <h2
+              id="popular-categories-heading"
+              className="mt-1 text-2xl font-bold text-gray-900"
             >
-              Jelajahi Produk
-            </a>
+              Kategori Produk
+            </h2>
           </div>
+        </div>
+
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+          {categories.map((category) => {
+            const Icon = categoryIcons[category.name] ?? LuBox;
+
+            return (
+              <Link
+                key={category.id}
+                href={`/categories/${category.id}`}
+                className="group flex min-h-28 flex-col items-center justify-center gap-3 rounded-lg border border-gray-200 bg-white p-4 text-center transition-colors hover:border-blue-300 hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+              >
+                <Icon
+                  aria-hidden="true"
+                  className="h-8 w-8 text-blue-700 transition-transform group-hover:scale-110"
+                />
+                <span className="text-sm font-medium text-gray-800">
+                  {category.name}
+                </span>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
       {/* product section */}
-      <section id="produk" className="mx-auto max-w-7xl px-6 py-16">
-        <div className="mb-10 rounded-xl border border-gray-200 bg-gray-50 p-4 sm:p-5">
-          <form
-            method="get"
-            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
-          >
-            <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
-              Kategori
-              <select
-                name="category"
-                defaultValue={params.category ?? ""}
-                className="h-11 rounded-md border border-gray-300 bg-white px-3 font-normal outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-              >
-                <option value="">Semua Kategori</option>
-
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
-              Brand
-              <select
-                name="brand"
-                defaultValue={params.brand ?? ""}
-                className="h-11 rounded-md border border-gray-300 bg-white px-3 font-normal outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-              >
-                <option value="">Semua Brand</option>
-
-                {brands.map((brand) => (
-                  <option key={brand.id} value={brand.id}>
-                    {brand.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
-              Urutkan
-              <select
-                name="sort"
-                defaultValue={params.sort ?? "latest"}
-                className="h-11 rounded-md border border-gray-300 bg-white px-3 font-normal outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-              >
-                <option value="latest">Terbaru</option>
-                <option value="oldest">Terlama</option>
-              </select>
-            </label>
-
-            <div className="flex items-end gap-3">
-              <button
-                type="submit"
-                className="h-11 flex-1 rounded-md bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700"
-              >
-                Terapkan
-              </button>
-
-              <Link
-                href="/"
-                className="flex h-11 items-center rounded-md border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-              >
-                Reset
-              </Link>
-            </div>
-          </form>
-        </div>
+      <section id="produk" className="mx-auto max-w-7xl px-6 py-4">
+        <h2 className="mb-6 text-2xl font-bold text-gray-900">
+          Produk Terbaru
+        </h2>
 
         {products.length === 0 ? (
           <p className="text-gray-500">Belum ada produk tersedia.</p>
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {products.map((product) => (
-              <article
+              <ProductCard
                 key={product.id}
-                className="group flex h-full min-w-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg"
-              >
-                <div className="relative aspect-4/3 overflow-hidden bg-gray-100 sm:aspect-square">
-                  {product.images[0] ? (
-                    <Image
-                      src={product.images[0].url}
-                      alt={product.name}
-                      fill
-                      className="object-contain p-5 transition duration-500 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-sm text-gray-500">
-                      Gambar Produk
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex flex-1 flex-col p-4 sm:p-5">
-                  <h3 className="line-clamp-2 min-h-12 text-base font-semibold leading-6 text-gray-900">
-                    {product.name}
-                  </h3>
-
-                  <p className="mt-3 text-lg font-bold text-blue-600">
-                    {product.variants[0]
-                      ? `Rp ${Number(product.variants[0].price).toLocaleString(
-                          "id-ID",
-                        )}`
-                      : "Harga belum tersedia"}
-                  </p>
-
-                  <Link
-                    href={`/products/${product.id}`}
-                    className="mt-5 block rounded-lg bg-gray-900 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-blue-700"
-                  >
-                    Lihat Detail
-                  </Link>
-                </div>
-              </article>
+                productId={product.id}
+                name={product.name}
+                imageUrl={product.images[0]?.url ?? null}
+                price={
+                  product.variants[0] ? Number(product.variants[0].price) : null
+                }
+              />
             ))}
           </div>
         )}
@@ -241,44 +177,20 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </div>
 
         <div className="mt-10 grid gap-5 md:grid-cols-3">
-          <div className="rounded-lg border border-blue-100 bg-blue-50 p-6">
-            <LuTruck className="h-9 w-9 text-blue-700" />
+          {benefits.map(({ icon: Icon, title, description }) => (
+            <div
+              key={title}
+              className="rounded-lg border border-blue-100 bg-blue-50 p-6"
+            >
+              <Icon className="h-9 w-9 text-blue-700" />
 
-            <h3 className="mt-5 font-semibold text-blue-950">
-              Pengiriman Cepat
-            </h3>
+              <h3 className="mt-5 font-semibold text-blue-950">{title}</h3>
 
-            <p className="mt-2 text-sm leading-6 text-gray-600">
-              Produk dikemas dengan aman dan dikirim secepat mungkin sampai ke
-              tangan kamu.
-            </p>
-          </div>
-
-          <div className="rounded-lg border border-blue-100 bg-blue-50 p-6">
-            <LuShield className="h-9 w-9 text-blue-700" />
-
-            <h3 className="mt-5 font-semibold text-blue-950">
-              Produk Original
-            </h3>
-
-            <p className="mt-2 text-sm leading-6 text-gray-600">
-              Semua produk berasal dari brand terpercaya dan memiliki garansi
-              resmi.
-            </p>
-          </div>
-
-          <div className="rounded-lg border border-blue-100 bg-blue-50 p-6">
-            <LuHeadphones className="h-9 w-9 text-blue-700" />
-
-            <h3 className="mt-5 font-semibold text-blue-950">
-              Layanan Pelanggan
-            </h3>
-
-            <p className="mt-2 text-sm leading-6 text-gray-600">
-              Tim kami siap membantu menjawab pertanyaan dan kebutuhan belanja
-              kamu.
-            </p>
-          </div>
+              <p className="mt-2 text-sm leading-6 text-gray-600">
+                {description}
+              </p>
+            </div>
+          ))}
         </div>
       </section>
     </div>
