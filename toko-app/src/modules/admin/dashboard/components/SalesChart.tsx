@@ -23,6 +23,8 @@ interface SalesChartProps {
   data?: DailySalesData[];
   isLoading?: boolean;
   error?: string | null;
+  title?: string;
+  subtitle?: string;
 }
 
 const formatIDR = (val: number) => {
@@ -77,7 +79,13 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
   return null;
 }
 
-export function SalesChart({ data = [], isLoading = false, error = null }: SalesChartProps) {
+export function SalesChart({
+  data = [],
+  isLoading = false,
+  error = null,
+  title = 'Tren Penjualan Harian',
+  subtitle = 'Pendapatan harian dari pesanan berstatus lunas, dikirim, dan selesai',
+}: SalesChartProps) {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -135,7 +143,7 @@ export function SalesChart({ data = [], isLoading = false, error = null }: Sales
         </div>
         <h3 className="text-sm font-semibold text-gray-900">Belum Ada Data Penjualan</h3>
         <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto">
-          Data grafik akan otomatis terbentuk setelah ada transaksi pesanan yang masuk dan diverifikasi.
+          Data grafik akan otomatis terbentuk setelah ada transaksi pesanan yang masuk dan diverifikasi pada periode ini.
         </p>
       </div>
     );
@@ -148,11 +156,11 @@ export function SalesChart({ data = [], isLoading = false, error = null }: Sales
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-sm font-semibold text-gray-900">
-              Tren Penjualan 7 Hari Terakhir
+              {title}
             </h2>
           </div>
           <p className="text-xs text-gray-500 mt-0.5">
-            Pendapatan harian dari pesanan berstatus lunas, dikirim, dan selesai
+            {subtitle}
           </p>
         </div>
         <div className="text-left sm:text-right">

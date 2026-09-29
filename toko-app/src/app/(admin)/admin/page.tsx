@@ -8,14 +8,41 @@ import {
 } from '@heroicons/react/24/outline';
 import { SalesChart, DailySalesData } from '@/modules/admin/dashboard/components/SalesChart';
 import { RecentOrders, RecentOrderItem } from '@/modules/admin/dashboard/components/RecentOrders';
+import { DashboardMonthFilter } from '@/modules/admin/dashboard/components/DashboardMonthFilter';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminDashboardPage() {
-  const today = new Date();
-  const sevenDaysAgo = new Date(today);
-  sevenDaysAgo.setDate(today.getDate() - 6);
-  sevenDaysAgo.setHours(0, 0, 0, 0);
+interface AdminDashboardPageProps {
+  searchParams?: Promise<{
+    month?: string;
+  }>;
+}
+
+export default async function AdminDashboardPage({
+  searchParams,
+}: AdminDashboardPageProps) {
+  const params = await searchParams;
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonthNumber = now.getMonth() + 1;
+  const defaultMonthStr = `${currentYear}-${String(currentMonthNumber).padStart(2, '0')}`;
+
+  const monthParam = typeof params?.month === 'string' ? params.month.trim() : '';
+  const isValidMonth = /^\d{4}-(0[1-9]|1[0-2])$/.test(monthParam);
+  const selectedMonth = isValidMonth ? monthParam : defaultMonthStr;
+
+  const [selectedYear, selectedMonthNum] = selectedMonth.split('-').map(Number);
+
+  // Time boundaries for the selected month
+  const startOfMonth = new Date(selectedYear, selectedMonthNum - 1, 1, 0, 0, 0, 0);
+  const endOfMonth = new Date(selectedYear, selectedMonthNum, 0, 23, 59, 59, 999);
+  const daysInMonth = endOfMonth.getDate();
+
+  const monthLabel = new Intl.DateTimeFormat('id-ID', {
+    month: 'long',
+    year: 'numeric',
+  }).format(startOfMonth);
 
   const [
     salesAggregate,
@@ -23,31 +50,43 @@ export default async function AdminDashboardPage() {
     activeProducts,
     totalCustomers,
     recentOrdersRaw,
-    paidOrdersLast7Days,
+    paidOrdersInMonth,
   ] = await Promise.all([
+    // Total Penjualan pada bulan yang dipilih
     prisma.order.aggregate({
       where: {
         status: {
           in: [OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.COMPLETED],
+        },
+        createdAt: {
+          gte: startOfMonth,
+          lte: endOfMonth,
         },
       },
       _sum: {
         totalAmount: true,
       },
     }),
+    // Total Pesanan pada bulan yang dipilih (di luar cancelled)
     prisma.order.count({
       where: {
         status: {
           not: OrderStatus.CANCELLED,
         },
+        createdAt: {
+          gte: startOfMonth,
+          lte: endOfMonth,
+        },
       },
     }),
+    // Metrik kesehatan katalog & pelanggan secara umum
     prisma.product.count({
       where: { isArchived: false },
     }),
     prisma.user.count({
       where: { role: 'CUSTOMER' },
     }),
+    // 5 pesanan terbaru yang masuk
     prisma.order.findMany({
       take: 5,
       orderBy: { createdAt: 'desc' },
@@ -66,13 +105,15 @@ export default async function AdminDashboardPage() {
         },
       },
     }),
+    // Pesanan lunas pada bulan terpilih untuk data harian grafik
     prisma.order.findMany({
       where: {
         status: {
           in: [OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.COMPLETED],
         },
         createdAt: {
-          gte: sevenDaysAgo,
+          gte: startOfMonth,
+          lte: endOfMonth,
         },
       },
       select: {
@@ -94,23 +135,25 @@ export default async function AdminDashboardPage() {
     }).format(val);
   };
 
-  // Build daily sales data for the last 7 days
+  // Build daily sales data for each day of the selected month
   const daysMap = new Map<string, { totalSales: number; orderCount: number; label: string }>();
 
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
-    const key = d.toISOString().slice(0, 10);
-    const label = new Intl.DateTimeFormat('id-ID', {
-      day: 'numeric',
-      month: 'short',
-    }).format(d);
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dayStr = String(d).padStart(2, '0');
+    const monthStr = String(selectedMonthNum).padStart(2, '0');
+    const key = `${selectedYear}-${monthStr}-${dayStr}`;
+    const label = `${d} ${new Intl.DateTimeFormat('id-ID', { month: 'short' }).format(startOfMonth)}`;
 
     daysMap.set(key, { totalSales: 0, orderCount: 0, label });
   }
 
-  paidOrdersLast7Days.forEach((order) => {
-    const key = new Date(order.createdAt).toISOString().slice(0, 10);
+  paidOrdersInMonth.forEach((order) => {
+    const d = new Date(order.createdAt);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const key = `${y}-${m}-${day}`;
+
     if (daysMap.has(key)) {
       const existing = daysMap.get(key)!;
       existing.totalSales += Number(order.totalAmount);
@@ -141,13 +184,13 @@ export default async function AdminDashboardPage() {
     {
       title: 'Total Penjualan',
       value: formatIDR(totalSalesAmount),
-      desc: 'Pesanan lunas, dikirim, dan selesai',
+      desc: `Pesanan lunas periode ${monthLabel}`,
       icon: BanknotesIcon,
     },
     {
       title: 'Total Pesanan',
       value: totalOrders.toLocaleString('id-ID'),
-      desc: 'Pesanan menunggu bayar, verifikasi, lunas, dikirim, dan selesai',
+      desc: `Pesanan aktif periode ${monthLabel}`,
       icon: ShoppingBagIcon,
     },
     {
@@ -166,14 +209,19 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-          Ringkasan Dashboard
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Selamat datang di panel administrasi ByteStore. Pantau kinerja penjualan dan katalog produk Anda.
-        </p>
+      {/* Header with Month Filter */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+            Ringkasan Dashboard
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Selamat datang di panel administrasi ByteStore. Pantau kinerja penjualan dan katalog produk Anda.
+          </p>
+        </div>
+
+        {/* Month Filter */}
+        <DashboardMonthFilter currentMonth={selectedMonth} />
       </div>
 
       {/* Stats Cards */}
@@ -200,12 +248,17 @@ export default async function AdminDashboardPage() {
         })}
       </div>
 
-      {/* Sales Trend Chart */}
-      <SalesChart data={salesChartData} />
+      {/* Sales Trend Chart for Selected Month */}
+      <SalesChart
+        data={salesChartData}
+        title={`Tren Penjualan Harian: ${monthLabel}`}
+        subtitle={`Pendapatan harian dari pesanan berstatus lunas pada ${monthLabel}`}
+      />
 
       {/* Recent Orders Table */}
       <RecentOrders orders={formattedRecentOrders} />
     </div>
   );
 }
+
 

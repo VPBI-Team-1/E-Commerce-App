@@ -4,14 +4,16 @@ Halaman utama panel admin `/admin` berfungsi sebagai pusat pemantauan ringkasan 
 
 ## Alur dan Cara Kerja
 
-### 1. Agregasi Metrik Penjualan dan Katalog
-Saat admin membuka dashboard, Server Component menjalankan kueri paralel menggunakan `Promise.all` untuk menarik empat indikator utama dari database:
-- Total Penjualan: Akumulasi nilai tagihan kotor dari pesanan yang telah berstatus Lunas (*PAID*), Dikirim (*SHIPPED*), dan Selesai (*COMPLETED*) menggunakan fungsi agregasi `_sum.totalAmount` Prisma. Transaksi berstatus dibatalkan atau belum bayar dikecualikan dari perhitungan omzet agar data keuangan tetap akurat.
-- Total Pesanan Aktif: Menghitung seluruh transaksi yang tercatat di sistem di luar pesanan yang dibatalkan (*CANCELLED*).
+### 1. Agregasi Metrik Penjualan dan Katalog Berbasis Periode Bulan
+Saat admin membuka dashboard, Server Component menerima parameter pencarian bulan (`searchParams.month` berformat `YYYY-MM`). Jika parameter tidak ada, sistem otomatis menggunakan bulan berjalan saat ini.
+
+Server Component menjalankan kueri paralel menggunakan `Promise.all` untuk menarik empat indikator utama dari database:
+- Total Penjualan: Akumulasi nilai tagihan kotor dari pesanan berstatus Lunas (*PAID*), Dikirim (*SHIPPED*), dan Selesai (*COMPLETED*) yang masuk pada rentang bulan terpilih menggunakan fungsi agregasi `_sum.totalAmount` Prisma. Transaksi berstatus dibatalkan atau belum bayar dikecualikan dari perhitungan omzet agar data keuangan tetap akurat.
+- Total Pesanan Aktif: Menghitung seluruh transaksi yang tercatat pada rentang bulan terpilih di luar pesanan yang dibatalkan (*CANCELLED*).
 - Produk Aktif di Katalog: Menghitung total varian produk yang tidak diarsipkan (`isArchived: false`) dan siap dibeli oleh pengunjung etalase toko.
 - Total Pelanggan: Menghitung seluruh akun pengguna terdaftar yang memiliki peran pembeli (`role: 'CUSTOMER'`).
 
-Pengambilan data secara paralel ini mempercepat waktu muat halaman karena empat kueri dijalankan serentak oleh mesin database PostgreSQL. Angka total penjualan langsung diformat ke standar mata uang Rupiah (*id-ID*) tanpa pecahan desimal.
+Pada bagian header ringkasan dashboard, tersedia pemilih bulan menggunakan elemen masukan bulan dan tahun (`<input type="month">`) melalui komponen `DashboardMonthFilter`. Setiap kali admin memilih bulan, URL akan diperbarui dengan parameter `?month=YYYY-MM` sehingga seluruh metrik penjualan, jumlah pesanan, dan grafik harian otomatis menyesuaikan dengan bulan yang dipilih.
 
 ### 2. Panduan Desain dan Estetika Antarmuka (Flat Minimalist)
 Panel administrasi ByteStore menerapkan standar antarmuka fungsional yang berfokus pada keterbacaan data dan efisiensi kerja:
@@ -33,11 +35,11 @@ Komponen mendeteksi rute halaman yang sedang aktif menggunakan pustaka `usePathn
 
 ### 4. Visualisasi Grafik Penjualan (SalesChart)
 Untuk memantau performa bisnis dari waktu ke waktu, dashboard dilengkapi komponen visualisasi `SalesChart` berbasis pustaka `recharts`:
-- Menggunakan diagram area (*AreaChart*) responsif yang menampilkan agregasi nilai penjualan harian selama 7 hari terakhir.
-- Sumber Data: Menghitung total nilai pesanan lunas (*PAID*, *SHIPPED*, *COMPLETED*) yang masuk dalam jendela 7 hari terakhir.
+- Menggunakan diagram area (*AreaChart*) responsif yang menampilkan agregasi nilai penjualan harian untuk setiap hari pada bulan yang dipilih.
+- Sumber Data: Menghitung total nilai pesanan lunas (*PAID*, *SHIPPED*, *COMPLETED*) yang masuk dalam rentang tanggal 1 hingga akhir bulan terpilih.
 - Penanganan Kondisi UI (*UI States*):
   - *Loading State*: Menampilkan kerangka visual (*skeleton shimmer*) saat grafik sedang memuat atau proses hidrasi sisi klien.
-  - *Empty State*: Menampilkan pesan informatif jika belum ada catatan transaksi penjualan pada periode tersebut.
+  - *Empty State*: Menampilkan pesan informatif jika belum ada catatan transaksi penjualan pada bulan tersebut.
   - *Error State*: Menampilkan kartu peringatan jika terjadi kegagalan pengambilan data.
 - Tooltip Interaktif: Menampilkan rincian nominal penjualan dalam format Rupiah dan jumlah pesanan yang terselesaikan pada tanggal terkait.
 
