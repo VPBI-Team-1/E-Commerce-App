@@ -3,6 +3,7 @@
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { OrderStatus } from '@prisma/client';
+import { verifyAdminServerAction } from '@/lib/server-auth';
 
 export interface ActionResponse<T = unknown> {
   success: boolean;
@@ -16,6 +17,9 @@ export interface ActionResponse<T = unknown> {
  * Mengubah status pesanan dari VERIFYING menjadi PAID.
  */
 export async function verifyPayment(orderId: string): Promise<ActionResponse> {
+  const authCheck = await verifyAdminServerAction();
+  if (!authCheck.success) return { success: false, error: authCheck.error };
+
   if (!orderId || typeof orderId !== 'string') {
     return { success: false, error: 'ID pesanan tidak valid.' };
   }
@@ -63,6 +67,9 @@ export async function verifyPayment(orderId: string): Promise<ActionResponse> {
  * Mengubah status ke SHIPPED, menghasilkan nomor resi tiruan, dan menghitung ETA.
  */
 export async function shipOrder(orderId: string): Promise<ActionResponse> {
+  const authCheck = await verifyAdminServerAction();
+  if (!authCheck.success) return { success: false, error: authCheck.error };
+
   if (!orderId || typeof orderId !== 'string') {
     return { success: false, error: 'ID pesanan tidak valid.' };
   }
@@ -122,6 +129,9 @@ export async function shipOrder(orderId: string): Promise<ActionResponse> {
  * Membatalkan pesanan dan mengembalikan kuantitas stok produk terkait (restock).
  */
 export async function cancelOrder(orderId: string): Promise<ActionResponse> {
+  const authCheck = await verifyAdminServerAction();
+  if (!authCheck.success) return { success: false, error: authCheck.error };
+
   if (!orderId || typeof orderId !== 'string') {
     return { success: false, error: 'ID pesanan tidak valid.' };
   }
