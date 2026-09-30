@@ -26,6 +26,14 @@ export async function middleware(request: NextRequest) {
   const isAdminAuthPath =
     pathname === "/admin/login" || pathname === "/admin/register";
 
+  const isCustomerProtectedPath =
+    pathname === "/profile" ||
+    pathname.startsWith("/profile/") ||
+    pathname === "/orders" ||
+    pathname.startsWith("/orders/") ||
+    pathname === "/wishlist" ||
+    pathname.startsWith("/wishlist/");
+
   // Skenario 1: Pengguna dengan role ADMIN
   if (isAdmin) {
     // Admin tidak diperbolehkan dan tidak perlu mengakses halaman customer / publik
@@ -55,6 +63,10 @@ export async function middleware(request: NextRequest) {
   }
 
   // Skenario 3: Pengguna belum login (Guest / Tanpa token)
+  if (isCustomerProtectedPath) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
   if (isAdminPath) {
     // Hanya halaman auth admin (/admin/login atau /admin/register) yang dapat diakses oleh guest
     if (isAdminAuthPath) {
