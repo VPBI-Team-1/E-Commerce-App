@@ -21,7 +21,7 @@ export default function CheckoutPage() {
     city: "",
     postalCode: "",
   });
-  const [courier, setCourier] = useState<string>("JNE Express");
+  const [courier, setCourier] = useState<string>("Standard");
 
   // Load Data Item dari Cart
   useEffect(() => {
@@ -48,7 +48,8 @@ export default function CheckoutPage() {
     return acc + price * item.quantity;
   }, 0);
 
-  const shippingFee = courier === "JNE Express" ? 20000 : 15000;
+  const shippingFee = 0;
+  const originalShippingFee = courier === "Cargo" ? 50000 : 15000;
   const totalAmount = subtotal + shippingFee;
 
   const handleSubmitOrder = (e: React.FormEvent) => {
@@ -192,22 +193,18 @@ export default function CheckoutPage() {
               <div className="space-y-3">
                 {[
                   {
-                    id: "JNE Express",
-                    name: "JNE Express (Reguler)",
-                    fee: 20000,
-                    eta: "2-3 hari",
+                    id: "Standard",
+                    name: "Standard Delivery",
+                    fee: 0,
+                    originalFee: 15000,
+                    eta: "3 hari",
                   },
                   {
-                    id: "J&T Express",
-                    name: "J&T Express (Standard)",
-                    fee: 15000,
-                    eta: "3-4 hari",
-                  },
-                  {
-                    id: "Sicepat",
-                    name: "SiCepat REG",
-                    fee: 18000,
-                    eta: "2-3 hari",
+                    id: "Cargo",
+                    name: "Cargo Delivery",
+                    fee: 0,
+                    originalFee: 50000,
+                    eta: "5 hari",
                   },
                 ].map((item) => (
                   <label
@@ -235,8 +232,13 @@ export default function CheckoutPage() {
                         </p>
                       </div>
                     </div>
-                    <span className="text-sm font-bold text-gray-900">
-                      Rp {item.fee.toLocaleString("id-ID")}
+                    <span className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                      {(item as any).originalFee !== undefined && (
+                        <span className="line-through text-gray-400 font-normal">
+                          Rp {(item as any).originalFee.toLocaleString("id-ID")}
+                        </span>
+                      )}
+                      <span>Rp {item.fee.toLocaleString("id-ID")}</span>
                     </span>
                   </label>
                 ))}
@@ -293,7 +295,14 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between text-gray-600">
                 <span>Ongkos Kirim</span>
-                <span>Rp {shippingFee.toLocaleString("id-ID")}</span>
+                <div className="flex items-center gap-2">
+                  {originalShippingFee !== undefined && (
+                    <span className="line-through text-gray-400">
+                      Rp {originalShippingFee.toLocaleString("id-ID")}
+                    </span>
+                  )}
+                  <span>Rp {shippingFee.toLocaleString("id-ID")}</span>
+                </div>
               </div>
               <div className="pt-2 border-t border-gray-100 flex justify-between font-bold text-base text-gray-900">
                 <span>Total Pesanan</span>
