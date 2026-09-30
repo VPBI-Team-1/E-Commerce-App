@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -8,7 +9,9 @@ import {
   BuildingStorefrontIcon,
   CubeIcon,
   ShoppingBagIcon,
+  ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline';
+import { useAuth } from '@/context/AuthContext';
 
 interface NavigationItem {
   name: string;
@@ -52,6 +55,18 @@ const navigationItems: NavigationItem[] = [
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      await logout('/admin/login');
+    } catch (error) {
+      console.error('Gagal logout admin:', error);
+      setIsLoggingOut(false);
+    }
+  };
 
   return (
     <aside className="w-64 shrink-0 border-r border-gray-200 bg-white flex flex-col min-h-screen">
@@ -108,6 +123,30 @@ export function AdminSidebar() {
           );
         })}
       </nav>
+
+      {/* User Info and Logout */}
+      <div className="p-3 border-t border-gray-200">
+        <div className="flex items-center justify-between gap-3 px-2 py-1">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-gray-900 truncate">
+              {user?.name || user?.email || 'Admin'}
+            </p>
+            <p className="text-xs text-gray-600 truncate">
+              {user?.email || 'admin@bytestore.com'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            title={isLoggingOut ? 'Memproses...' : 'Keluar'}
+            aria-label="Keluar dari akun admin"
+            className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+          >
+            <ArrowRightOnRectangleIcon className="w-5 h-5" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
     </aside>
   );
 }

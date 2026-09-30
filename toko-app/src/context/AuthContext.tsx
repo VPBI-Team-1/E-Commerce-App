@@ -21,7 +21,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   refreshUser: () => Promise<void>;
-  logout: () => Promise<void>;
+  logout: (redirectPath?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -74,10 +74,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [fetchUser]);
 
-  const logout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+  const logout = async (redirectPath: string = "/login") => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch (error) {
+      console.error("Failed to execute logout request:", error);
+    }
     setUser(null);
-    router.push("/login");
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("user");
+      window.dispatchEvent(new Event("bytestore-auth-change"));
+    }
+    router.push(redirectPath);
+    router.refresh();
   };
 
   return (
