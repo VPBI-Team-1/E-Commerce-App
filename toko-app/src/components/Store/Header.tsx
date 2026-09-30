@@ -6,8 +6,11 @@ import { useRouter } from "next/navigation";
 import {
   LuShoppingCart,
   LuUser,
+  LuShoppingBag,
+  LuHeart,
   LuLayoutDashboard,
   LuLogOut,
+  LuChevronRight,
 } from "react-icons/lu";
 import SearchBar from "./SearchBar";
 import LoginPromptModal from "./LoginPromptModal";
@@ -71,9 +74,7 @@ export default function Header() {
   const stored = getStoredUserData();
   const displayName =
     user?.name || user?.email?.split("@")[0] || stored.name || (stored.email ? stored.email.split("@")[0] : null) || "Pengguna";
-  const displayEmail = user?.email || stored.email || "";
   const userRole = user?.role || stored.role || "CUSTOMER";
-  const userInitial = displayName.charAt(0).toUpperCase() || "U";
 
   useEffect(() => {
     if (!isPopupOpen) return;
@@ -159,46 +160,45 @@ export default function Header() {
                   aria-labelledby="user-menu-button"
                   className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-gray-200 bg-white p-2 shadow-xl ring-1 ring-black/5"
                 >
-                  <div className="flex items-center gap-3 rounded-xl bg-gray-50 p-3 border border-gray-100">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-sm">
-                      {userInitial}
+                  <Link
+                    href="/profile"
+                    role="menuitem"
+                    onClick={() => setIsPopupOpen(false)}
+                    className="flex items-center gap-3 rounded-xl bg-gray-50 p-3 border border-gray-100 transition-colors hover:bg-gray-100 hover:border-gray-200 group cursor-pointer"
+                  >
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-primary transition-colors group-hover:bg-blue-100">
+                      <LuUser className="h-5 w-5" />
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-gray-900 leading-snug">
+                      <p className="truncate text-sm font-semibold text-gray-900 group-hover:text-primary transition-colors">
                         {displayName}
                       </p>
-                      {displayEmail ? (
-                        <p className="truncate text-xs text-gray-500 mt-0.5">
-                          {displayEmail}
-                        </p>
-                      ) : (
-                        <p className="text-xs font-medium text-emerald-600 mt-0.5">
-                          Akun Terverifikasi
-                        </p>
-                      )}
                     </div>
-                  </div>
+
+                    <LuChevronRight className="h-4 w-4 text-gray-400 transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                  </Link>
 
                   <div className="mt-1.5 space-y-0.5" role="none">
+
                     <Link
-                      href="/profile"
+                      href="/orders"
                       role="menuitem"
                       onClick={() => setIsPopupOpen(false)}
                       className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:bg-gray-100 group cursor-pointer"
                     >
-                      <LuUser className="h-4 w-4 text-gray-400 group-hover:text-primary transition-colors" />
-                      <span>Akun Saya</span>
+                      <LuShoppingBag className="h-4 w-4 text-gray-400 group-hover:text-primary transition-colors" />
+                      <span>Pembelian</span>
                     </Link>
 
                     <Link
-                      href="/cart"
+                      href="/wishlist"
                       role="menuitem"
                       onClick={() => setIsPopupOpen(false)}
                       className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:bg-gray-100 group cursor-pointer"
                     >
-                      <LuShoppingCart className="h-4 w-4 text-gray-400 group-hover:text-primary transition-colors" />
-                      <span>Keranjang Saya</span>
+                      <LuHeart className="h-4 w-4 text-gray-400 group-hover:text-primary transition-colors" />
+                      <span>Wishlist</span>
                     </Link>
 
                     {userRole === "ADMIN" && (
