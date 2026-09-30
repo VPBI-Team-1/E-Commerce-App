@@ -1,5 +1,4 @@
-import React from "react";
-import UserSidebar from "@/components/Store/UserSidebar";
+import UserSidebar from "@/modules/account/components/UserSidebar";
 
 export const metadata = {
   title: "Akun Saya | ByteStore",
