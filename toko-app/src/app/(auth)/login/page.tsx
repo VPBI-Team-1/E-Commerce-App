@@ -158,13 +158,22 @@ export default function LoginPage() {
           </form>
 
           <p className="mt-6 text-center text-sm text-gray-500">
-            Belum punya akun?{" "}
+            Belum punya akun ?{" "}
             <Link href="/register" className="text-primary hover:underline">
-              Daftar
+              Daftar{" "}
             </Link>
             <span className="mx-2 text-gray-300">|</span>
             <Link href="/admin/login" className="text-primary hover:underline">
               Masuk sebagai Admin
+            </Link>
+          </p>
+          <p className="mt-6 text-center text-sm text-gray-500">
+            Lupa password ?
+            <Link
+              href="/forgot-password"
+              className="text-primary hover:underline"
+            >
+              Lupa Password
             </Link>
           </p>
         </div>
