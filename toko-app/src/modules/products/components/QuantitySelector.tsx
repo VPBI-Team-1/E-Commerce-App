@@ -5,10 +5,19 @@ import { LuMinus, LuPlus } from "react-icons/lu";
 
 export type QuantitySelectorProps = {
   stock: number;
+  value?: number;
+  onChange?: (val: number) => void;
 };
 
-export default function QuantitySelector({ stock }: QuantitySelectorProps) {
-  const [quantity, setQuantity] = useState(1);
+export default function QuantitySelector({ stock, value, onChange }: QuantitySelectorProps) {
+  const [internalQuantity, setInternalQuantity] = useState(1);
+  
+  const quantity = value !== undefined ? value : internalQuantity;
+  
+  const handleUpdate = (val: number) => {
+    if (onChange) onChange(val);
+    else setInternalQuantity(val);
+  };
 
   const canDecrease = quantity > 1;
   const canIncrease = quantity < stock;
@@ -22,7 +31,7 @@ export default function QuantitySelector({ stock }: QuantitySelectorProps) {
           type="button"
           aria-label="Kurangi kuantitas"
           disabled={!canDecrease}
-          onClick={() => setQuantity((current) => Math.max(1, current - 1))}
+          onClick={() => handleUpdate(Math.max(1, quantity - 1))}
           className="flex h-full w-10 items-center justify-center border-r border-gray-300 text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <LuMinus />
@@ -39,7 +48,7 @@ export default function QuantitySelector({ stock }: QuantitySelectorProps) {
           type="button"
           aria-label="Tambah kuantitas"
           disabled={!canIncrease}
-          onClick={() => setQuantity((current) => Math.min(stock, current + 1))}
+          onClick={() => handleUpdate(Math.min(stock, quantity + 1))}
           className="flex h-full w-10 items-center justify-center border-l border-gray-300 text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <LuPlus />

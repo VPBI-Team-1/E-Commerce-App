@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import ProductDetailView from "@/components/Product/ProductDetailView";
+import ProductDetailView from "@/modules/products/components/ProductDetail";
 import { AdminBackButton } from "@/modules/admin/components/AdminBackButton";
 import { notFound } from "next/navigation";
 
