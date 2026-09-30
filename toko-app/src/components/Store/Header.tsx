@@ -1,9 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useSyncExternalStore } from "react";
+import { useState, useRef, useEffect, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
-import { LuShoppingCart, LuUser } from "react-icons/lu";
+import {
+  LuShoppingCart,
+  LuUser,
+  LuLayoutDashboard,
+  LuLogOut,
+} from "react-icons/lu";
 import SearchBar from "./SearchBar";
 import LoginPromptModal from "./LoginPromptModal";
 import { useAuth } from "@/context/AuthContext";
@@ -28,15 +33,23 @@ function getServerAuthSnapshot() {
   return false;
 }
 
-function getStoredUserName(): string | null {
-  if (typeof window === "undefined") return null;
+function getStoredUserData(): {
+  name: string | null;
+  email: string | null;
+  role: string | null;
+} {
+  if (typeof window === "undefined") return { name: null, email: null, role: null };
   try {
     const raw = localStorage.getItem("user");
-    if (!raw) return null;
+    if (!raw) return { name: null, email: null, role: null };
     const parsed = JSON.parse(raw);
-    return parsed?.name || parsed?.email?.split("@")[0] || null;
+    return {
+      name: parsed?.name || null,
+      email: parsed?.email || null,
+      role: parsed?.role || null,
+    };
   } catch {
-    return null;
+    return { name: null, email: null, role: null };
   }
 }
 
@@ -45,6 +58,7 @@ export default function Header() {
   const { user, logout } = useAuth();
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const isStorageLoggedIn = useSyncExternalStore(
     subscribeToAuth,
@@ -53,8 +67,37 @@ export default function Header() {
   );
 
   const isLoggedIn = Boolean(user) || isStorageLoggedIn;
+
+  const stored = getStoredUserData();
   const displayName =
-    user?.name || user?.email?.split("@")[0] || getStoredUserName() || "Pengguna";
+    user?.name || user?.email?.split("@")[0] || stored.name || (stored.email ? stored.email.split("@")[0] : null) || "Pengguna";
+  const displayEmail = user?.email || stored.email || "";
+  const userRole = user?.role || stored.role || "CUSTOMER";
+  const userInitial = displayName.charAt(0).toUpperCase() || "U";
+
+  useEffect(() => {
+    if (!isPopupOpen) return;
+
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsPopupOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsPopupOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isPopupOpen]);
 
   const handleLogout = async () => {
     setIsPopupOpen(false);
@@ -92,50 +135,99 @@ export default function Header() {
           </Link>
 
           {isLoggedIn ? (
-            <div
-              className="relative"
-              onMouseEnter={() => setIsPopupOpen(true)}
-              onMouseLeave={() => setIsPopupOpen(false)}
-            >
+            <div className="relative" ref={dropdownRef}>
               <button
                 type="button"
-                aria-label="Buka menu profil"
+                id="user-menu-button"
+                aria-label={`Buka menu profil untuk ${displayName}`}
+                aria-haspopup="menu"
                 aria-expanded={isPopupOpen}
                 onClick={() => setIsPopupOpen((current) => !current)}
-                className="rounded-full bg-gray-100 p-2 text-gray-700 transition-colors hover:bg-blue-50 hover:text-primary"
+                className={`rounded-full p-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer ${
+                  isPopupOpen
+                    ? "bg-blue-50 text-primary ring-2 ring-primary/20"
+                    : "bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-primary"
+                }`}
               >
                 <LuUser className="h-6 w-6" />
               </button>
 
               {isPopupOpen && (
-                <div className="absolute right-0 top-full z-50 mt-3 w-56 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
-                  <div className="border-b border-gray-100 px-4 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="rounded-full bg-blue-50 p-2 text-primary">
-                        <LuUser className="h-5 w-5" />
-                      </div>
+                <div
+                  role="menu"
+                  aria-orientation="vertical"
+                  aria-labelledby="user-menu-button"
+                  className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-gray-200 bg-white p-2 shadow-xl ring-1 ring-black/5"
+                >
+                  <div className="flex items-center gap-3 rounded-xl bg-gray-50 p-3 border border-gray-100">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-sm">
+                      {userInitial}
+                    </div>
 
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-gray-900 truncate">
-                          {displayName}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-gray-900 leading-snug">
+                        {displayName}
+                      </p>
+                      {displayEmail ? (
+                        <p className="truncate text-xs text-gray-500 mt-0.5">
+                          {displayEmail}
                         </p>
-                      </div>
+                      ) : (
+                        <p className="text-xs font-medium text-emerald-600 mt-0.5">
+                          Akun Terverifikasi
+                        </p>
+                      )}
                     </div>
                   </div>
 
-                  <div className="p-2">
+                  <div className="mt-1.5 space-y-0.5" role="none">
                     <Link
                       href="/profile"
-                      className="block rounded-lg px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 hover:text-primary"
+                      role="menuitem"
+                      onClick={() => setIsPopupOpen(false)}
+                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:bg-gray-100 group cursor-pointer"
                     >
-                      Akun Saya
+                      <LuUser className="h-4 w-4 text-gray-400 group-hover:text-primary transition-colors" />
+                      <span>Akun Saya</span>
                     </Link>
 
-                    <button
-                      onClick={handleLogout}
-                      className="block w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 hover:text-primary"
+                    <Link
+                      href="/cart"
+                      role="menuitem"
+                      onClick={() => setIsPopupOpen(false)}
+                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:bg-gray-100 group cursor-pointer"
                     >
-                      Log Out
+                      <LuShoppingCart className="h-4 w-4 text-gray-400 group-hover:text-primary transition-colors" />
+                      <span>Keranjang Saya</span>
+                    </Link>
+
+                    {userRole === "ADMIN" && (
+                      <Link
+                        href="/admin"
+                        role="menuitem"
+                        onClick={() => setIsPopupOpen(false)}
+                        className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-blue-50 hover:text-primary focus-visible:outline-none focus-visible:bg-blue-50 group cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3">
+                          <LuLayoutDashboard className="h-4 w-4 text-blue-600 group-hover:text-primary transition-colors" />
+                          <span>Panel Admin</span>
+                        </div>
+                        <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-blue-700">
+                          Admin
+                        </span>
+                      </Link>
+                    )}
+
+                    <div className="my-1 border-t border-gray-100" role="separator" />
+
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={handleLogout}
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-red-600 transition-colors hover:bg-red-50 hover:text-red-700 focus-visible:outline-none focus-visible:bg-red-50 group cursor-pointer"
+                    >
+                      <LuLogOut className="h-4 w-4 text-red-500 group-hover:text-red-600 transition-colors" />
+                      <span>Keluar</span>
                     </button>
                   </div>
                 </div>
