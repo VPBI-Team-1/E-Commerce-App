@@ -16,20 +16,20 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadOrders() {
-      try {
-        const res = await getUserOrders();
-        if (res.success && res.data) {
-          setOrders(res.data as Order[]);
-        }
-      } catch (err) {
-        console.error("Gagal memuat pesanan:", err);
-      } finally {
-        setIsLoading(false);
+  const loadOrders = async () => {
+    try {
+      const res = await getUserOrders();
+      if (res.success && res.data) {
+        setOrders(res.data as Order[]);
       }
+    } catch (err) {
+      console.error("Gagal memuat pesanan:", err);
+    } finally {
+      setIsLoading(false);
     }
+  };
 
+  useEffect(() => {
     if (user) {
       loadOrders();
     }
@@ -84,7 +84,7 @@ export default function OrdersPage() {
         /* Order Cards */
         <div className="space-y-4">
           {orders.map((order) => (
-            <OrderCard key={order.id} order={order} />
+            <OrderCard key={order.id} order={order} onOrderUpdate={loadOrders} />
           ))}
         </div>
       )}

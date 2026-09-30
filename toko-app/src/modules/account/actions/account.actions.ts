@@ -379,3 +379,266 @@ export async function changePassword(data: ChangePasswordInput) {
     };
   }
 }
+
+export async function getUserOrderDetail(orderId: string) {
+  try {
+    const auth = await getAuthenticatedUser();
+    if (!auth) {
+      return { success: false, message: "Sesi telah berakhir, silakan login kembali." };
+    }
+
+    if (!orderId || typeof orderId !== "string") {
+      return { success: false, message: "ID pesanan tidak valid." };
+    }
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        items: {
+          include: {
+            variant: {
+              include: {
+                product: {
+                  include: {
+                    images: {
+                      orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }],
+                      take: 1,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!order) {
+      return { success: false, message: "Pesanan tidak ditemukan." };
+    }
+
+    // Security check: Must belong to user
+    if (order.userId !== auth.userId) {
+      return { success: false, message: "Anda tidak memiliki akses ke pesanan ini." };
+    }
+
+    const serializedOrder = JSON.parse(JSON.stringify(order));
+
+    return {
+      success: true,
+      data: serializedOrder,
+    };
+  } catch (error: unknown) {
+    console.error("Error fetching order detail:", error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Gagal memuat detail pesanan.",
+    };
+  }
+}
+
+export async function confirmOrderPayment(orderId: string) {
+  try {
+    const auth = await getAuthenticatedUser();
+    if (!auth) {
+      return { success: false, message: "Sesi telah berakhir, silakan login kembali." };
+    }
+
+    if (!orderId || typeof orderId !== "string") {
+      return { success: false, message: "ID pesanan tidak valid." };
+    }
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: {
+        id: true,
+        userId: true,
+        status: true,
+        invoiceNumber: true,
+      },
+    });
+
+    if (!order) {
+      return { success: false, message: "Pesanan tidak ditemukan." };
+    }
+
+    // Security check: Must belong to user
+    if (order.userId !== auth.userId) {
+      return { success: false, message: "Akses ditolak. Pesanan bukan milik Anda." };
+    }
+
+    // Only PENDING orders can be confirmed
+    if (order.status !== "PENDING") {
+      return {
+        success: false,
+        message: "Hanya pesanan berstatus Menunggu Pembayaran yang dapat dikonfirmasi pembayarannya.",
+      };
+    }
+
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { status: "VERIFYING" },
+    });
+
+    revalidatePath("/orders");
+    revalidatePath(`/orders/${orderId}`);
+    revalidatePath("/admin/orders");
+    revalidatePath(`/admin/orders/${orderId}`);
+
+    return {
+      success: true,
+      message: `Konfirmasi pembayaran untuk ${order.invoiceNumber} berhasil dikirim. Menunggu verifikasi admin.`,
+    };
+  } catch (error: unknown) {
+    console.error("Error confirming order payment:", error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Gagal mengonfirmasi pembayaran.",
+    };
+  }
+}
+
+export async function cancelUserOrder(orderId: string) {
+  try {
+    const auth = await getAuthenticatedUser();
+    if (!auth) {
+      return { success: false, message: "Sesi telah berakhir, silakan login kembali." };
+    }
+
+    if (!orderId || typeof orderId !== "string") {
+      return { success: false, message: "ID pesanan tidak valid." };
+    }
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        items: {
+          select: { productVariantId: true, quantity: true },
+        },
+      },
+    });
+
+    if (!order) {
+      return { success: false, message: "Pesanan tidak ditemukan." };
+    }
+
+    // Security check: Must belong to user
+    if (order.userId !== auth.userId) {
+      return { success: false, message: "Akses ditolak. Pesanan bukan milik Anda." };
+    }
+
+    // Only PENDING orders can be cancelled by customer
+    if (order.status !== "PENDING") {
+      return {
+        success: false,
+        message: "Hanya pesanan yang masih berstatus Menunggu Pembayaran yang dapat dibatalkan.",
+      };
+    }
+
+    // Atomic transaction: update status and restore stock
+    await prisma.$transaction(async (tx) => {
+      await tx.order.update({
+        where: { id: orderId },
+        data: { status: "CANCELLED" },
+      });
+
+      for (const item of order.items) {
+        if (item.productVariantId) {
+          await tx.productVariant.update({
+            where: { id: item.productVariantId },
+            data: {
+              stock: {
+                increment: item.quantity,
+              },
+            },
+          });
+        }
+      }
+    });
+
+    revalidatePath("/orders");
+    revalidatePath(`/orders/${orderId}`);
+    revalidatePath("/admin/orders");
+    revalidatePath(`/admin/orders/${orderId}`);
+
+    return {
+      success: true,
+      message: `Pesanan ${order.invoiceNumber} berhasil dibatalkan.`,
+    };
+  } catch (error: unknown) {
+    console.error("Error cancelling order:", error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Gagal membatalkan pesanan.",
+    };
+  }
+}
+
+export async function completeUserOrder(orderId: string) {
+  try {
+    const auth = await getAuthenticatedUser();
+    if (!auth) {
+      return { success: false, message: "Sesi telah berakhir, silakan login kembali." };
+    }
+
+    if (!orderId || typeof orderId !== "string") {
+      return { success: false, message: "ID pesanan tidak valid." };
+    }
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: {
+        id: true,
+        userId: true,
+        status: true,
+        invoiceNumber: true,
+      },
+    });
+
+    if (!order) {
+      return { success: false, message: "Pesanan tidak ditemukan." };
+    }
+
+    // Security check: Must belong to user
+    if (order.userId !== auth.userId) {
+      return { success: false, message: "Akses ditolak. Pesanan bukan milik Anda." };
+    }
+
+    // Only SHIPPED orders can be completed by customer
+    if (order.status !== "SHIPPED") {
+      return {
+        success: false,
+        message: "Hanya pesanan yang sedang dikirim yang dapat diselesaikan.",
+      };
+    }
+
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { status: "COMPLETED" },
+    });
+
+    revalidatePath("/orders");
+    revalidatePath(`/orders/${orderId}`);
+    revalidatePath("/admin/orders");
+    revalidatePath(`/admin/orders/${orderId}`);
+
+    return {
+      success: true,
+      message: `Pesanan ${order.invoiceNumber} telah selesai. Terima kasih telah berbelanja di ByteStore!`,
+    };
+  } catch (error: unknown) {
+    console.error("Error completing order:", error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Gagal menyelesaikan pesanan.",
+    };
+  }
+}
+

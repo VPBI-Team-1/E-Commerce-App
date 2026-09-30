@@ -22,12 +22,26 @@ export interface OrderItem {
   quantity: number;
   subtotal: number;
   variant?: {
+    id?: string;
+    name?: string;
+    price?: number;
+    stock?: number;
     product?: {
+      id?: string;
+      name?: string;
       images?: {
         url: string;
       }[];
     };
   };
+}
+
+export interface ShippingAddressData {
+  recipientName?: string;
+  phone?: string;
+  fullAddress?: string;
+  city?: string;
+  postalCode?: string;
 }
 
 export interface Order {
@@ -36,6 +50,16 @@ export interface Order {
   status: OrderStatus;
   totalAmount: number;
   courier: string;
+  trackingNumber?: string | null;
+  eta?: string | null;
+  expiresAt?: string;
+  shippingAddress?: ShippingAddressData | Record<string, unknown> | null;
   createdAt: string;
+  updatedAt?: string;
   items: OrderItem[];
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+  };
 }

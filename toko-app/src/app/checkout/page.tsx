@@ -5,40 +5,95 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { getOrCreateCart, getCartItems } from "../cart/actions";
-import { createOrderAction, ShippingAddressInput } from "./actions";
+import { createOrderAction } from "./actions";
+import { getAddresses } from "@/modules/account/actions/account.actions";
+import { Address } from "@/modules/account/types/account.types";
+
+interface CartItemData {
+  id: string;
+  variantId?: string;
+  quantity: number;
+  variant?: {
+    id?: string;
+    price?: number | string;
+    stock?: number;
+    product?: {
+      name?: string;
+      images?: { url: string }[];
+    };
+  };
+}
+
+interface CourierOption {
+  id: string;
+  name: string;
+  fee: number;
+  originalFee: number;
+  eta: string;
+}
+
+const COURIER_OPTIONS: CourierOption[] = [
+  {
+    id: "Standard",
+    name: "Standard Delivery",
+    fee: 0,
+    originalFee: 15000,
+    eta: "3 hari",
+  },
+  {
+    id: "Cargo",
+    name: "Cargo Delivery",
+    fee: 0,
+    originalFee: 50000,
+    eta: "5 hari",
+  },
+];
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<CartItemData[]>([]);
   const [loading, setLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
 
-  // Form State
-  const [address, setAddress] = useState<ShippingAddressInput>({
-    name: "",
-    phone: "",
-    address: "",
-    city: "",
-    postalCode: "",
-  });
+  // Address State from Customer Account
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>("");
   const [courier, setCourier] = useState<string>("Standard");
 
-  // Load Data Item dari Cart
+  // Load Data Item dari Cart dan Daftar Alamat Akun
   useEffect(() => {
     async function loadCheckoutData() {
       setLoading(true);
-      const cartRes = await getOrCreateCart();
-      if (cartRes.success && cartRes.data) {
-        const itemsRes = await getCartItems(cartRes.data.id);
-        if (itemsRes.success && itemsRes.data) {
-          if (itemsRes.data.length === 0) {
-            router.push("/cart");
-            return;
+      try {
+        const [cartRes, addrRes] = await Promise.all([
+          getOrCreateCart(),
+          getAddresses(),
+        ]);
+
+        if (cartRes.success && cartRes.data) {
+          const itemsRes = await getCartItems(cartRes.data.id);
+          if (itemsRes.success && itemsRes.data) {
+            if (itemsRes.data.length === 0) {
+              router.push("/cart");
+              return;
+            }
+            setItems(itemsRes.data as CartItemData[]);
           }
-          setItems(itemsRes.data);
         }
+
+        if (addrRes.success && addrRes.data) {
+          const addrList = addrRes.data as Address[];
+          setAddresses(addrList);
+          const defaultAddr = addrList.find((a) => a.isDefault) || addrList[0];
+          if (defaultAddr) {
+            setSelectedAddressId(defaultAddr.id);
+          }
+        }
+      } catch (err) {
+        console.error("Gagal memuat data checkout:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     loadCheckoutData();
   }, [router]);
@@ -48,21 +103,24 @@ export default function CheckoutPage() {
     return acc + price * item.quantity;
   }, 0);
 
-  const shippingFee = 0;
-  const originalShippingFee = courier === "Cargo" ? 50000 : 15000;
+  const selectedCourierObj =
+    COURIER_OPTIONS.find((c) => c.id === courier) || COURIER_OPTIONS[0];
+  const shippingFee = selectedCourierObj.fee;
+  const originalShippingFee = selectedCourierObj.originalFee;
   const totalAmount = subtotal + shippingFee;
 
   const handleSubmitOrder = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!address.name || !address.phone || !address.address) {
-      alert("Harap lengkapi alamat pengiriman!");
+    const selectedAddress = addresses.find((a) => a.id === selectedAddressId);
+    if (!selectedAddress || !selectedAddress.fullAddress.trim()) {
+      alert("Harap pilih alamat pengiriman Anda terlebih dahulu!");
       return;
     }
 
     startTransition(async () => {
       const res = await createOrderAction({
-        shippingAddress: address,
+        shippingAddress: { fullAddress: selectedAddress.fullAddress.trim() },
         courier,
       });
 
@@ -70,7 +128,7 @@ export default function CheckoutPage() {
         alert(
           `Pesanan Berhasil Dibuat!\nNo. Invoice: ${res.data.invoiceNumber}`,
         );
-        router.push(`/order/success?id=${res.data.orderId}`); // Halaman konfirmasi
+        router.push(`/order/success?id=${res.data.orderId}`);
       } else {
         alert(res.message || "Terjadi kesalahan saat membuat pesanan.");
       }
@@ -99,90 +157,74 @@ export default function CheckoutPage() {
           onSubmit={handleSubmitOrder}
           className="grid grid-cols-1 lg:grid-cols-3 gap-8"
         >
-          {/* Kolom Kiri: Form Alamat & Kurir */}
+          {/* Kolom Kiri: Alamat dari Akun & Kurir */}
           <div className="lg:col-span-2 space-y-6">
             {/* 1. Alamat Pengiriman */}
             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">
-                1. Alamat Pengiriman
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">
-                    Nama Penerima
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={address.name}
-                    onChange={(e) =>
-                      setAddress({ ...address, name: e.target.value })
-                    }
-                    className="w-full border rounded-lg p-2.5 text-sm focus:outline-blue-600"
-                    placeholder="John Doe"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">
-                    Nomor Telepon
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={address.phone}
-                    onChange={(e) =>
-                      setAddress({ ...address, phone: e.target.value })
-                    }
-                    className="w-full border rounded-lg p-2.5 text-sm focus:outline-blue-600"
-                    placeholder="081234567890"
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">
-                    Alamat Lengkap
-                  </label>
-                  <textarea
-                    required
-                    rows={3}
-                    value={address.address}
-                    onChange={(e) =>
-                      setAddress({ ...address, address: e.target.value })
-                    }
-                    className="w-full border rounded-lg p-2.5 text-sm focus:outline-blue-600"
-                    placeholder="Jalan, Blok, No. Rumah, RT/RW, Kec/Kel"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">
-                    Kota / Kabupaten
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={address.city}
-                    onChange={(e) =>
-                      setAddress({ ...address, city: e.target.value })
-                    }
-                    className="w-full border rounded-lg p-2.5 text-sm focus:outline-blue-600"
-                    placeholder="Jakarta Selatan"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">
-                    Kode Pos
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={address.postalCode}
-                    onChange={(e) =>
-                      setAddress({ ...address, postalCode: e.target.value })
-                    }
-                    className="w-full border rounded-lg p-2.5 text-sm focus:outline-blue-600"
-                    placeholder="12345"
-                  />
-                </div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-gray-900">
+                  1. Alamat Pengiriman
+                </h2>
+                <Link
+                  href="/profile"
+                  className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline"
+                >
+                  Kelola Alamat di Profil
+                </Link>
               </div>
+
+              {addresses.length === 0 ? (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800 space-y-3">
+                  <p className="leading-relaxed">
+                    Anda belum memiliki alamat pengiriman tersimpan di akun Anda. Harap tambahkan alamat di halaman Profil untuk melanjutkan pemesanan.
+                  </p>
+                  <Link
+                    href="/profile"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-amber-700 px-3.5 py-2 font-medium text-white hover:bg-amber-800 transition-colors cursor-pointer"
+                  >
+                    Tambah Alamat Sekarang
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {addresses.map((addr) => {
+                    const isSelected = selectedAddressId === addr.id;
+                    return (
+                      <label
+                        key={addr.id}
+                        className={`flex items-start gap-3.5 p-4 rounded-xl border cursor-pointer transition ${
+                          isSelected
+                            ? "border-blue-600 bg-blue-50/30 ring-1 ring-blue-500/20 shadow-2xs"
+                            : "border-gray-200 hover:border-gray-300 bg-white"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="selectedAddress"
+                          checked={isSelected}
+                          onChange={() => setSelectedAddressId(addr.id)}
+                          className="mt-1 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-semibold text-gray-900">
+                              Alamat Pengiriman
+                            </span>
+                            {addr.isDefault && (
+                              <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-200">
+                                Utama
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-700 leading-relaxed">
+                            {addr.fullAddress}
+                          </p>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* 2. Opsi Pengiriman (Kurir) */}
@@ -191,27 +233,12 @@ export default function CheckoutPage() {
                 2. Metode Pengiriman
               </h2>
               <div className="space-y-3">
-                {[
-                  {
-                    id: "Standard",
-                    name: "Standard Delivery",
-                    fee: 0,
-                    originalFee: 15000,
-                    eta: "3 hari",
-                  },
-                  {
-                    id: "Cargo",
-                    name: "Cargo Delivery",
-                    fee: 0,
-                    originalFee: 50000,
-                    eta: "5 hari",
-                  },
-                ].map((item) => (
+                {COURIER_OPTIONS.map((item) => (
                   <label
                     key={item.id}
                     className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition ${
                       courier === item.id
-                        ? "border-blue-600 bg-blue-50/30"
+                        ? "border-blue-600 bg-blue-50/30 ring-1 ring-blue-500/20"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
@@ -221,7 +248,7 @@ export default function CheckoutPage() {
                         name="courier"
                         checked={courier === item.id}
                         onChange={() => setCourier(item.id)}
-                        className="text-blue-600 focus:ring-blue-500"
+                        className="text-blue-600 focus:ring-blue-500 cursor-pointer"
                       />
                       <div>
                         <p className="text-sm font-semibold text-gray-900">
@@ -233,12 +260,12 @@ export default function CheckoutPage() {
                       </div>
                     </div>
                     <span className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                      {(item as any).originalFee !== undefined && (
-                        <span className="line-through text-gray-400 font-normal">
-                          Rp {(item as any).originalFee.toLocaleString("id-ID")}
-                        </span>
-                      )}
-                      <span>Rp {item.fee.toLocaleString("id-ID")}</span>
+                      <span className="line-through text-gray-400 font-normal">
+                        Rp {item.originalFee.toLocaleString("id-ID")}
+                      </span>
+                      <span className="text-emerald-700 font-bold">
+                        Rp {item.fee.toLocaleString("id-ID")}
+                      </span>
                     </span>
                   </label>
                 ))}
@@ -314,10 +341,14 @@ export default function CheckoutPage() {
 
             <button
               type="submit"
-              disabled={isPending}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl transition shadow-md shadow-blue-200 disabled:opacity-50 text-sm"
+              disabled={isPending || addresses.length === 0}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl transition shadow-md shadow-blue-200 disabled:opacity-50 text-sm cursor-pointer disabled:cursor-not-allowed"
             >
-              {isPending ? "Memproses Pesanan..." : "Buat Pesanan"}
+              {isPending
+                ? "Memproses Pesanan..."
+                : addresses.length === 0
+                ? "Tambahkan Alamat Terlebih Dahulu"
+                : "Buat Pesanan"}
             </button>
           </div>
         </form>

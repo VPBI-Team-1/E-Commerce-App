@@ -1,60 +1,27 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Order } from "@/modules/account/types/account.types";
+import { OrderStatusBadge } from "@/components/ui/OrderStatusBadge";
+import PaymentModal from "@/modules/account/components/PaymentModal";
 import {
   LuPackage,
-  LuClock,
-  LuCircleCheck,
-  LuTruck,
-  LuCircleX,
+  LuCreditCard,
+  LuArrowRight,
 } from "react-icons/lu";
 
 interface OrderCardProps {
   order: Order;
+  onOrderUpdate?: () => void;
 }
 
-export default function OrderCard({ order }: OrderCardProps) {
-  const getStatusBadge = (status: Order["status"]) => {
-    switch (status) {
-      case "COMPLETED":
-        return (
-          <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
-            <LuCircleCheck className="h-3.5 w-3.5" />
-            <span>Selesai</span>
-          </span>
-        );
-      case "SHIPPED":
-        return (
-          <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 border border-blue-200">
-            <LuTruck className="h-3.5 w-3.5" />
-            <span>Dikirim</span>
-          </span>
-        );
-      case "PAID":
-        return (
-          <span className="inline-flex items-center gap-1 rounded-md bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 border border-indigo-200">
-            <LuCircleCheck className="h-3.5 w-3.5" />
-            <span>Dibayar</span>
-          </span>
-        );
-      case "CANCELLED":
-        return (
-          <span className="inline-flex items-center gap-1 rounded-md bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 border border-red-200">
-            <LuCircleX className="h-3.5 w-3.5" />
-            <span>Dibatalkan</span>
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
-            <LuClock className="h-3.5 w-3.5" />
-            <span>Menunggu Pembayaran</span>
-          </span>
-        );
-    }
-  };
+export default function OrderCard({ order: initialOrder, onOrderUpdate }: OrderCardProps) {
+  const router = useRouter();
+  const [order, setOrder] = useState<Order>(initialOrder);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   const formatPrice = (val: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -64,12 +31,23 @@ export default function OrderCard({ order }: OrderCardProps) {
     }).format(val);
   };
 
+  const handlePaymentSuccess = () => {
+    setOrder((prev) => ({
+      ...prev,
+      status: "VERIFYING",
+    }));
+    if (onOrderUpdate) {
+      onOrderUpdate();
+    }
+    router.refresh();
+  };
+
   const firstItem = order.items?.[0];
   const remainingCount = (order.items?.length || 0) - 1;
   const imageUrl = firstItem?.variant?.product?.images?.[0]?.url;
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 transition-all hover:border-gray-300">
+    <div className="rounded-2xl border border-gray-200 bg-white p-5 transition-all hover:border-gray-300 shadow-2xs">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-3 text-xs text-gray-500">
         <div className="flex items-center gap-2 flex-wrap">
@@ -85,7 +63,9 @@ export default function OrderCard({ order }: OrderCardProps) {
             })}
           </span>
         </div>
-        <div>{getStatusBadge(order.status)}</div>
+        <div>
+          <OrderStatusBadge status={order.status} size="sm" />
+        </div>
       </div>
 
       {/* Item info */}
@@ -127,14 +107,46 @@ export default function OrderCard({ order }: OrderCardProps) {
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-end border-t border-gray-100 pt-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-gray-100 pt-3">
         <div className="flex items-baseline gap-2">
           <span className="text-xs text-gray-500">Total Belanja:</span>
           <span className="text-base font-bold text-primary">
             {formatPrice(Number(order.totalAmount))}
           </span>
         </div>
+
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          {order.status === "PENDING" && (
+            <button
+              type="button"
+              onClick={() => setIsPaymentModalOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-semibold text-white shadow-2xs hover:bg-blue-700 transition-colors cursor-pointer"
+            >
+              <LuCreditCard className="h-3.5 w-3.5" />
+              <span>Bayar</span>
+            </button>
+          )}
+
+          <Link
+            href={`/orders/${order.id}`}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-gray-300 bg-white px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors cursor-pointer"
+          >
+            <span>Lihat Detail Transaksi</span>
+            <LuArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
       </div>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        orderId={order.id}
+        invoiceNumber={order.invoiceNumber}
+        totalAmount={Number(order.totalAmount)}
+        onPaymentSuccess={handlePaymentSuccess}
+      />
     </div>
   );
 }
+

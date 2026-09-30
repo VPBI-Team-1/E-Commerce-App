@@ -4,15 +4,11 @@ import prisma from "@/lib/prisma"; // sesuaikan path prisma client Anda
 import { getOrCreateCart, getCartItems } from "../cart/actions";
 
 export interface ShippingAddressInput {
-  name: string;
-  phone: string;
-  address: string;
-  city: string;
-  postalCode: string;
+  fullAddress: string;
 }
 
 export async function createOrderAction(data: {
-  shippingAddress: ShippingAddressInput;
+  shippingAddress: string | ShippingAddressInput | { fullAddress: string; [key: string]: unknown };
   courier: string;
 }) {
   try {
@@ -57,6 +53,19 @@ export async function createOrderAction(data: {
 
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
+    const fullAddress =
+      typeof data.shippingAddress === "string"
+        ? data.shippingAddress.trim()
+        : String(
+            data.shippingAddress?.fullAddress ||
+              (data.shippingAddress as Record<string, unknown>)?.address ||
+              ""
+          ).trim();
+
+    if (!fullAddress) {
+      return { success: false, message: "Alamat pengiriman wajib dipilih atau diisi." };
+    }
+
     const newOrder = await prisma.$transaction(async (tx) => {
       const order = await tx.order.create({
         data: {
@@ -65,7 +74,7 @@ export async function createOrderAction(data: {
           status: "PENDING",
           totalAmount,
           courier: data.courier,
-          shippingAddress: data.shippingAddress as any,
+          shippingAddress: { fullAddress },
           expiresAt,
           items: {
             create: cartItems.map((item: any) => ({

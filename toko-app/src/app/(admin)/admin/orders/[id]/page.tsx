@@ -131,13 +131,12 @@ export default async function AdminOrderDetailPage({
               <div>
                 <span className="text-gray-500 block">Alamat Tujuan</span>
                 <p className="text-gray-800 font-medium mt-0.5 leading-relaxed">
-                  {shipping.fullAddress || 'Alamat tidak tersedia'}
+                  {shipping.fullAddress ||
+                    (typeof order.shippingAddress === 'string'
+                      ? order.shippingAddress
+                      : ((order.shippingAddress as Record<string, unknown>)?.address as string)) ||
+                    'Alamat tidak tersedia'}
                 </p>
-                {(shipping.city || shipping.postalCode) && (
-                  <p className="text-gray-500 mt-0.5">
-                    {[shipping.city, shipping.postalCode].filter(Boolean).join(', ')}
-                  </p>
-                )}
               </div>
             </div>
 
