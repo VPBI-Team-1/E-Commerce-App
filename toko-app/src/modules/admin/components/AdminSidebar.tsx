@@ -61,7 +61,7 @@ export function AdminSidebar() {
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
-      await logout('/admin/login');
+      await logout('/');
     } catch (error) {
       console.error('Gagal logout admin:', error);
       setIsLoggingOut(false);
@@ -69,9 +69,9 @@ export function AdminSidebar() {
   };
 
   return (
-    <aside className="w-64 shrink-0 border-r border-gray-200 bg-white flex flex-col min-h-screen">
+    <aside className="w-64 shrink-0 border-r border-gray-200 bg-white flex flex-col h-screen sticky top-0 self-start z-30">
       {/* Brand Header */}
-      <div className="h-16 flex items-center px-6 bg-white border-b border-gray-200">
+      <div className="h-16 flex items-center px-6 bg-white border-b border-gray-200 shrink-0">
         <Link href="/admin" className="inline-flex items-center gap-3">
           <span className="rounded-lg bg-primary px-3 py-1 text-2xl font-bold text-white">
             B
@@ -83,7 +83,7 @@ export function AdminSidebar() {
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
           Menu Navigasi
         </p>
@@ -125,7 +125,7 @@ export function AdminSidebar() {
       </nav>
 
       {/* User Info and Logout */}
-      <div className="p-3 border-t border-gray-200">
+      <div className="p-3 border-t border-gray-200 shrink-0">
         <div className="flex items-center justify-between gap-3 px-2 py-1">
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-gray-900 truncate">
