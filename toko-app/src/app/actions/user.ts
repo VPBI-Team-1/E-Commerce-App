@@ -300,7 +300,22 @@ export async function getUserOrders() {
     const orders = await prisma.order.findMany({
       where: { userId: auth.userId },
       include: {
-        items: true,
+        items: {
+          include: {
+            variant: {
+              include: {
+                product: {
+                  include: {
+                    images: {
+                      orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }],
+                      take: 1,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });

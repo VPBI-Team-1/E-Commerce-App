@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 import { getUserOrders } from "@/app/actions/user";
 import {
@@ -20,6 +21,13 @@ interface OrderItem {
   price: number;
   quantity: number;
   subtotal: number;
+  variant?: {
+    product?: {
+      images?: {
+        url: string;
+      }[];
+    };
+  };
 }
 
 interface Order {
@@ -174,33 +182,54 @@ export default function OrdersPage() {
                 <div>{getStatusBadge(order.status)}</div>
               </div>
 
-              <div className="py-4 space-y-3">
-                {order.items?.map((item) => (
-                  <div key={item.id} className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-50 border border-gray-100 text-gray-600">
-                      <LuPackage className="h-5 w-5" />
+              <div className="py-4">
+                {(() => {
+                  const firstItem = order.items?.[0];
+                  const remainingCount = (order.items?.length || 0) - 1;
+
+                  if (!firstItem) return null;
+
+                  const imageUrl =
+                    firstItem.variant?.product?.images?.[0]?.url;
+
+                  return (
+                    <div className="flex items-start gap-3.5">
+                      <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-100 bg-gray-50 text-gray-500">
+                        {imageUrl ? (
+                          <Image
+                            src={imageUrl}
+                            alt={firstItem.productName}
+                            fill
+                            sizes="56px"
+                            className="object-contain p-1"
+                            unoptimized={
+                              !imageUrl.includes("m.media-amazon.com") &&
+                              !imageUrl.startsWith("/")
+                            }
+                          />
+                        ) : (
+                          <LuPackage className="h-6 w-6 text-gray-400" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 truncate">
+                          {firstItem.productName}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {firstItem.quantity} barang x {formatPrice(Number(firstItem.price))}
+                        </p>
+                        {remainingCount > 0 && (
+                          <p className="text-xs text-gray-500 mt-1 font-medium">
+                            +{remainingCount} produk lainnya
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 truncate">
-                        {item.productName}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {item.quantity} barang x {formatPrice(Number(item.price))}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-gray-900">
-                        {formatPrice(Number(item.subtotal))}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })()}
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-gray-100 pt-3">
-                <div className="text-xs text-gray-500">
-                  Kurir: <span className="font-medium text-gray-700">{order.courier}</span>
-                </div>
+              <div className="flex items-center justify-end border-t border-gray-100 pt-3">
                 <div className="flex items-baseline gap-2">
                   <span className="text-xs text-gray-500">Total Belanja:</span>
                   <span className="text-base font-bold text-primary">
