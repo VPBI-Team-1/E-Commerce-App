@@ -38,21 +38,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (res.ok) {
         const data = await res.json();
         setUser(data.user);
+        if (typeof window !== "undefined" && data.user) {
+          localStorage.setItem("user", JSON.stringify(data.user));
+          window.dispatchEvent(new Event("bytestore-auth-change"));
+        }
       } else if (res.status === 401) {
         const refreshRes = await fetch("/api/auth/refresh", { method: "POST" });
 
         if (refreshRes.ok) {
           const refreshData = await refreshRes.json();
           setUser(refreshData.user);
+          if (typeof window !== "undefined" && refreshData.user) {
+            localStorage.setItem("user", JSON.stringify(refreshData.user));
+            window.dispatchEvent(new Event("bytestore-auth-change"));
+          }
         } else {
           setUser(null);
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("user");
+            window.dispatchEvent(new Event("bytestore-auth-change"));
+          }
         }
       } else {
         setUser(null);
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("user");
+          window.dispatchEvent(new Event("bytestore-auth-change"));
+        }
       }
     } catch (error) {
       console.error("Failed to fetch auth state:", error);
       setUser(null);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("user");
+        window.dispatchEvent(new Event("bytestore-auth-change"));
+      }
     } finally {
       setIsLoading(false);
     }

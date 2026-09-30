@@ -11,6 +11,7 @@ import {
 } from "react-icons/lu";
 import { addCartItems } from "@/app/cart/actions";
 import QuantitySelector from "../QuantitySelector";
+import LoginPromptModal from "@/components/Store/LoginPromptModal";
 import type { ProductDetailData } from "../../types/product";
 
 export interface ProductInfoProps {
@@ -27,6 +28,7 @@ export default function ProductInfo({ product, isPreview = false }: ProductInfoP
   const [quantity, setQuantity] = useState<number>(1);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
 
   const activeVariant =
     product.variants.find((v) => v.id === selectedVariantId) ||
@@ -63,7 +65,11 @@ export default function ProductInfo({ product, isPreview = false }: ProductInfoP
       });
 
       if (!res.success) {
-        setErrorMsg(res.error || "Gagal menambahkan ke keranjang");
+        if (res.error === "Silakan login terlebih dahulu") {
+          setIsLoginModalOpen(true);
+        } else {
+          setErrorMsg(res.error || "Gagal menambahkan ke keranjang");
+        }
       } else {
         if (redirectCheckout) {
           router.push("/checkout");
@@ -249,6 +255,14 @@ export default function ProductInfo({ product, isPreview = false }: ProductInfoP
           </div>
         </div>
       </div>
+
+      <LoginPromptModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        redirectPath={`/products/${product.id}`}
+        title="Masuk untuk Melanjutkan"
+        description="Silakan masuk ke akun ByteStore Anda terlebih dahulu untuk menambahkan produk ini ke keranjang atau melakukan pemesanan."
+      />
     </div>
   );
 }

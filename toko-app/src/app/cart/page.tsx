@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { LuShoppingCart } from "react-icons/lu";
 import {
   getOrCreateCart,
   getCartItems,
@@ -35,6 +36,7 @@ export default function CartPage() {
   const [items, setItems] = useState<CartItemType[]>([]);
   const [loading, setLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
+  const [isUnauthenticated, setIsUnauthenticated] = useState(false);
 
   const loadCart = async () => {
     setLoading(true);
@@ -42,10 +44,13 @@ export default function CartPage() {
     const cartRes = await getOrCreateCart();
 
     if (cartRes.success && cartRes.data) {
+      setIsUnauthenticated(false);
       const itemsRes = await getCartItems(cartRes.data.id);
       if (itemsRes.success && itemsRes.data) {
         setItems(itemsRes.data as unknown as CartItemType[]);
       }
+    } else if (cartRes.error === "Silakan login terlebih dahulu") {
+      setIsUnauthenticated(true);
     }
 
     setLoading(false);
@@ -129,11 +134,36 @@ export default function CartPage() {
           </Link>
         </div>
 
-        {items.length === 0 ? (
-          /* State Keranjang Kosong */
+        {isUnauthenticated ? (
           <div className="bg-white rounded-2xl p-12 text-center border border-gray-100 shadow-sm max-w-md mx-auto my-12">
-            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
-              🛒
+            <div className="w-16 h-16 bg-blue-50 text-primary rounded-full flex items-center justify-center mx-auto mb-4">
+              <LuShoppingCart className="h-8 w-8 text-primary" aria-hidden="true" />
+            </div>
+            <h2 className="text-lg font-bold text-gray-900 mb-1">
+              Silakan Masuk Terlebih Dahulu
+            </h2>
+            <p className="text-sm text-gray-500 mb-6">
+              Masuk ke akun ByteStore Anda untuk mengakses keranjang belanja dan melanjutkan pesanan.
+            </p>
+            <div className="flex flex-col gap-3">
+              <Link
+                href="/login?redirect=/cart"
+                className="inline-block bg-primary text-white font-medium text-sm px-6 py-2.5 rounded-lg hover:bg-blue-700 transition shadow-sm"
+              >
+                Masuk Sekarang
+              </Link>
+              <Link
+                href="/"
+                className="inline-block border border-gray-300 text-gray-700 font-medium text-sm px-6 py-2.5 rounded-lg hover:bg-gray-50 transition"
+              >
+                Kembali ke Beranda
+              </Link>
+            </div>
+          </div>
+        ) : items.length === 0 ? (
+          <div className="bg-white rounded-2xl p-12 text-center border border-gray-100 shadow-sm max-w-md mx-auto my-12">
+            <div className="w-16 h-16 bg-blue-50 text-primary rounded-full flex items-center justify-center mx-auto mb-4">
+              <LuShoppingCart className="h-8 w-8 text-primary" aria-hidden="true" />
             </div>
             <h2 className="text-lg font-bold text-gray-900 mb-1">
               Keranjang Anda Kosong
@@ -143,7 +173,7 @@ export default function CartPage() {
             </p>
             <Link
               href="/"
-              className="inline-block bg-blue-600 text-white font-medium text-sm px-6 py-2.5 rounded-lg hover:bg-blue-700 transition shadow-sm shadow-blue-200"
+              className="inline-block bg-primary text-white font-medium text-sm px-6 py-2.5 rounded-lg hover:bg-blue-700 transition shadow-sm"
             >
               Jelajahi Produk ByteStore
             </Link>

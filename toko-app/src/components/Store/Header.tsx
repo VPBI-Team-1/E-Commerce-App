@@ -5,6 +5,8 @@ import { useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { LuShoppingCart, LuUser } from "react-icons/lu";
 import SearchBar from "./SearchBar";
+import LoginPromptModal from "./LoginPromptModal";
+import { useAuth } from "@/context/AuthContext";
 
 const AUTH_CHANGE_EVENT = "bytestore-auth-change";
 
@@ -26,21 +28,37 @@ function getServerAuthSnapshot() {
   return false;
 }
 
+function getStoredUserName(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem("user");
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed?.name || parsed?.email?.split("@")[0] || null;
+  } catch {
+    return null;
+  }
+}
+
 export default function Header() {
   const router = useRouter();
+  const { user, logout } = useAuth();
   const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
-  const isLoggedIn = useSyncExternalStore(
+  const isStorageLoggedIn = useSyncExternalStore(
     subscribeToAuth,
     getAuthSnapshot,
     getServerAuthSnapshot,
   );
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
+  const isLoggedIn = Boolean(user) || isStorageLoggedIn;
+  const displayName =
+    user?.name || user?.email?.split("@")[0] || getStoredUserName() || "Pengguna";
+
+  const handleLogout = async () => {
     setIsPopupOpen(false);
-    router.push("/");
+    await logout("/");
   };
 
   return (
@@ -62,7 +80,13 @@ export default function Header() {
           <Link
             href="/cart"
             aria-label="Buka keranjang"
-            className="rounded-full p-2 text-gray-700 transition-colors hover:bg-gray-100 hover:text-primary"
+            onClick={(e) => {
+              if (!isLoggedIn) {
+                e.preventDefault();
+                setIsLoginModalOpen(true);
+              }
+            }}
+            className="rounded-full p-2 text-gray-700 transition-colors hover:bg-gray-100 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
           >
             <LuShoppingCart className="h-6 w-6" />
           </Link>
@@ -91,11 +115,10 @@ export default function Header() {
                         <LuUser className="h-5 w-5" />
                       </div>
 
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">
-                          Pengguna
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-gray-900 truncate">
+                          {displayName}
                         </p>
-                        <p className="text-xs text-gray-500">Akun ByteStore</p>
                       </div>
                     </div>
                   </div>
@@ -137,6 +160,12 @@ export default function Header() {
           )}
         </nav>
       </div>
+
+      <LoginPromptModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        redirectPath="/cart"
+      />
     </header>
   );
 }

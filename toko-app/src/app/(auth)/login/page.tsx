@@ -42,9 +42,18 @@ export default function LoginPage() {
           }, 2000);
         }
       } else if (result?.success) {
+        if (typeof window !== "undefined" && result.user) {
+          localStorage.setItem("user", JSON.stringify(result.user));
+          window.dispatchEvent(new Event("bytestore-auth-change"));
+        }
         await refreshUser();
 
-        router.push("/");
+        const redirectUrl =
+          typeof window !== "undefined"
+            ? new URLSearchParams(window.location.search).get("redirect") || "/"
+            : "/";
+
+        router.push(redirectUrl);
         router.refresh();
       }
     } catch (err) {
