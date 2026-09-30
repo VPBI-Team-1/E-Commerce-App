@@ -35,12 +35,22 @@ export async function createOrderAction(data: {
 
     const cartItems = itemsRes.data;
 
+    // Validate stock
+    for (const item of cartItems) {
+      const stock = item.variant?.stock || 0;
+      if (stock < item.quantity) {
+        const productName = item.variant?.product?.name || "Produk";
+        return { success: false, message: `Stok ${productName} tidak mencukupi` };
+      }
+    }
+
     const subtotal = cartItems.reduce((acc: number, item: any) => {
       const price = item.variant?.price ? Number(item.variant.price) : 0;
       return acc + price * item.quantity;
     }, 0);
 
-    const shippingFee = data.courier === "JNE Express" ? 20000 : 15000;
+    let shippingFee = 0;
+
     const totalAmount = subtotal + shippingFee;
 
     const invoiceNumber = `INV-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -70,6 +80,16 @@ export async function createOrderAction(data: {
           },
         },
       });
+
+      for (const item of cartItems) {
+        const variantId = item.variantId || item.variant?.id;
+        if (variantId) {
+          await tx.productVariant.update({
+            where: { id: variantId },
+            data: { stock: { decrement: item.quantity } },
+          });
+        }
+      }
 
       await tx.cartItem.deleteMany({
         where: { cartId },
