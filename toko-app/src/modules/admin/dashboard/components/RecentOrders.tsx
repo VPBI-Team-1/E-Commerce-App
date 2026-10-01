@@ -133,9 +133,8 @@ export function RecentOrders({ orders = [], isLoading = false, error = null }: R
                 <td className="px-5 py-4 text-gray-500 whitespace-nowrap">
                   {formatDate(order.createdAt)}
                 </td>
-                <td className="px-5 py-4">
+                <td className="px-5 py-4 whitespace-nowrap">
                   <div className="font-medium text-gray-900">{order.user.name}</div>
-                  <div className="text-[11px] text-gray-400">{order.user.email}</div>
                 </td>
                 <td className="px-5 py-4 whitespace-nowrap">
                   <div className="font-semibold text-gray-900">
