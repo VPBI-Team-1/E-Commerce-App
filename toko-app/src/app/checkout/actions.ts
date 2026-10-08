@@ -8,7 +8,10 @@ export interface ShippingAddressInput {
 }
 
 export async function createOrderAction(data: {
-  shippingAddress: string | ShippingAddressInput | { fullAddress: string; [key: string]: unknown };
+  shippingAddress:
+    | string
+    | ShippingAddressInput
+    | { fullAddress: string; [key: string]: unknown };
   courier: string;
 }) {
   try {
@@ -36,7 +39,10 @@ export async function createOrderAction(data: {
       const stock = item.variant?.stock || 0;
       if (stock < item.quantity) {
         const productName = item.variant?.product?.name || "Produk";
-        return { success: false, message: `Stok ${productName} tidak mencukupi` };
+        return {
+          success: false,
+          message: `Stok ${productName} tidak mencukupi`,
+        };
       }
     }
 
@@ -59,11 +65,14 @@ export async function createOrderAction(data: {
         : String(
             data.shippingAddress?.fullAddress ||
               (data.shippingAddress as Record<string, unknown>)?.address ||
-              ""
+              "",
           ).trim();
 
     if (!fullAddress) {
-      return { success: false, message: "Alamat pengiriman wajib dipilih atau diisi." };
+      return {
+        success: false,
+        message: "Alamat pengiriman wajib dipilih atau diisi.",
+      };
     }
 
     const newOrder = await prisma.$transaction(async (tx) => {
