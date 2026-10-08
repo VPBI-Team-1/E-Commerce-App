@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useState, useRef, useEffect, useSyncExternalStore } from "react";
-import { useRouter } from "next/navigation";
 import {
   LuShoppingCart,
   LuUser,
@@ -15,6 +14,7 @@ import {
 import SearchBar from "./SearchBar";
 import LoginPromptModal from "./LoginPromptModal";
 import { useAuth } from "@/context/AuthContext";
+import { getCartItemCount } from "@/app/cart/actions";
 
 const AUTH_CHANGE_EVENT = "bytestore-auth-change";
 
@@ -41,7 +41,8 @@ function getStoredUserData(): {
   email: string | null;
   role: string | null;
 } {
-  if (typeof window === "undefined") return { name: null, email: null, role: null };
+  if (typeof window === "undefined")
+    return { name: null, email: null, role: null };
   try {
     const raw = localStorage.getItem("user");
     if (!raw) return { name: null, email: null, role: null };
@@ -57,10 +58,10 @@ function getStoredUserData(): {
 }
 
 export default function Header() {
-  const router = useRouter();
   const { user, logout } = useAuth();
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [cartItemCount, setCartItemCount] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const isStorageLoggedIn = useSyncExternalStore(
@@ -71,16 +72,59 @@ export default function Header() {
 
   const isLoggedIn = Boolean(user) || isStorageLoggedIn;
 
+  useEffect(() => {
+    let isActive = true;
+
+    const refreshCartItemCount = async () => {
+      if (!isLoggedIn) {
+        setCartItemCount(0);
+        return;
+      }
+
+      try {
+        const result = await getCartItemCount();
+
+        if (isActive) {
+          setCartItemCount(result.success ? result.count : 0);
+        }
+      } catch (error) {
+        console.error("Gagal memuat jumlah item keranjang:", error);
+      }
+    };
+
+    const handleCartChange = () => {
+      void refreshCartItemCount();
+    };
+
+    void refreshCartItemCount();
+
+    window.addEventListener("storage", handleCartChange);
+    window.addEventListener("cart-change", handleCartChange);
+
+    return () => {
+      isActive = false;
+      window.removeEventListener("storage", handleCartChange);
+      window.removeEventListener("cart-change", handleCartChange);
+    };
+  }, [isLoggedIn]);
+
   const stored = getStoredUserData();
   const displayName =
-    user?.name || user?.email?.split("@")[0] || stored.name || (stored.email ? stored.email.split("@")[0] : null) || "Pengguna";
+    user?.name ||
+    user?.email?.split("@")[0] ||
+    stored.name ||
+    (stored.email ? stored.email.split("@")[0] : null) ||
+    "Pengguna";
   const userRole = user?.role || stored.role || "CUSTOMER";
 
   useEffect(() => {
     if (!isPopupOpen) return;
 
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsPopupOpen(false);
       }
     }
@@ -123,16 +167,31 @@ export default function Header() {
         <nav className="flex items-center gap-2">
           <Link
             href="/cart"
-            aria-label="Buka keranjang"
+            aria-label={
+              cartItemCount > 0
+                ? `Keranjang, ${cartItemCount} barang`
+                : "Keranjang kosong"
+            }
             onClick={(e) => {
               if (!isLoggedIn) {
                 e.preventDefault();
                 setIsLoginModalOpen(true);
               }
             }}
-            className="rounded-full p-2 text-gray-700 transition-colors hover:bg-gray-100 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+            className="relative inline-flex items-center justify-center overflow-visible rounded-full p-2 text-gray-700 transition-colors hover:bg-gray-100 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
           >
-            <LuShoppingCart className="h-6 w-6" />
+            <span className="relative flex h-6 w-6 items-center justify-center">
+              <LuShoppingCart className="h-6 w-6" aria-hidden="true" />
+
+              {cartItemCount > 0 && (
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-2 -top-2 z-10 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white"
+                >
+                  {cartItemCount > 99 ? "99+" : cartItemCount}
+                </span>
+              )}
+            </span>
           </Link>
 
           {isLoggedIn ? (
@@ -180,7 +239,6 @@ export default function Header() {
                   </Link>
 
                   <div className="mt-1.5 space-y-0.5" role="none">
-
                     <Link
                       href="/orders"
                       role="menuitem"
@@ -218,7 +276,10 @@ export default function Header() {
                       </Link>
                     )}
 
-                    <div className="my-1 border-t border-gray-100" role="separator" />
+                    <div
+                      className="my-1 border-t border-gray-100"
+                      role="separator"
+                    />
 
                     <button
                       type="button"

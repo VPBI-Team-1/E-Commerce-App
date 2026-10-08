@@ -76,7 +76,12 @@ export default function CartPage() {
 
     startTransition(async () => {
       const res = await updateCartItemQuantityAction(itemId, newQty);
-      if (res.error || !res.success) loadCart();
+
+      if (res.error || !res.success) {
+        loadCart();
+      } else {
+        window.dispatchEvent(new Event("bytestore-cart-change"));
+      }
     });
   };
 
@@ -85,7 +90,11 @@ export default function CartPage() {
 
     startTransition(async () => {
       const res = await removeCartItemAction(itemId);
-      if (res.error || !res.success) loadCart();
+      if (res.error || !res.success) {
+        loadCart();
+      } else {
+        window.dispatchEvent(new Event("bytestore-cart-change"));
+      }
     });
   };
 
@@ -137,13 +146,17 @@ export default function CartPage() {
         {isUnauthenticated ? (
           <div className="bg-white rounded-2xl p-12 text-center border border-gray-100 shadow-sm max-w-md mx-auto my-12">
             <div className="w-16 h-16 bg-blue-50 text-primary rounded-full flex items-center justify-center mx-auto mb-4">
-              <LuShoppingCart className="h-8 w-8 text-primary" aria-hidden="true" />
+              <LuShoppingCart
+                className="h-8 w-8 text-primary"
+                aria-hidden="true"
+              />
             </div>
             <h2 className="text-lg font-bold text-gray-900 mb-1">
               Silakan Masuk Terlebih Dahulu
             </h2>
             <p className="text-sm text-gray-500 mb-6">
-              Masuk ke akun ByteStore Anda untuk mengakses keranjang belanja dan melanjutkan pesanan.
+              Masuk ke akun ByteStore Anda untuk mengakses keranjang belanja dan
+              melanjutkan pesanan.
             </p>
             <div className="flex flex-col gap-3">
               <Link
@@ -163,7 +176,10 @@ export default function CartPage() {
         ) : items.length === 0 ? (
           <div className="bg-white rounded-2xl p-12 text-center border border-gray-100 shadow-sm max-w-md mx-auto my-12">
             <div className="w-16 h-16 bg-blue-50 text-primary rounded-full flex items-center justify-center mx-auto mb-4">
-              <LuShoppingCart className="h-8 w-8 text-primary" aria-hidden="true" />
+              <LuShoppingCart
+                className="h-8 w-8 text-primary"
+                aria-hidden="true"
+              />
             </div>
             <h2 className="text-lg font-bold text-gray-900 mb-1">
               Keranjang Anda Kosong

@@ -51,6 +51,31 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
   const hasVariantFilter = Object.keys(variantWhere).length > 0;
 
+  const matchingProducts = {
+    isArchived: false,
+    name: {
+      contains: searchTerm,
+      mode: "insensitive" as const,
+    },
+  };
+
+  const [categories, brands] = searchTerm
+    ? await Promise.all([
+        prisma.category.findMany({
+          where: {
+            products: { some: matchingProducts },
+          },
+          orderBy: { name: "asc" },
+        }),
+        prisma.brand.findMany({
+          where: {
+            products: { some: matchingProducts },
+          },
+          orderBy: { name: "asc" },
+        }),
+      ])
+    : [[], []];
+
   const products = searchTerm
     ? await prisma.product.findMany({
         where: {
@@ -115,6 +140,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               selectedBrandIds={selectedBrandIds}
               minPrice={minPrice}
               maxPrice={maxPrice}
+              categories={categories}
+              brands={brands}
             />
 
             {/* product card */}
