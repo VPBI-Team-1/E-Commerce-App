@@ -9,7 +9,9 @@ import {
   getCartItems,
   updateCartItemQuantityAction,
   removeCartItemAction,
+  validateCartBeforeCheckout,
 } from "./actions";
+import { useRouter } from "next/navigation";
 
 interface ProductImage {
   id: string;
@@ -33,6 +35,7 @@ interface CartItemType {
 }
 
 export default function CartPage() {
+  const router = useRouter();
   const [items, setItems] = useState<CartItemType[]>([]);
   const [loading, setLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
@@ -104,6 +107,34 @@ export default function CartPage() {
   }, 0);
 
   const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
+
+  const validateStock = async () => {
+    try {
+      const validateItems = items.map((item) => ({
+        productVariantId: item.variant.id,
+        qty: item.quantity,
+      }));
+
+      const res = await validateCartBeforeCheckout(validateItems);
+
+      if (!res.success) {
+        const message = res.outOfStock
+          .map(
+            (item) =>
+              `${item.productName} (${item.productVariant})\n` +
+              `Diminta: ${item.requestedQty}, Tersedia: ${item.availableStock}`,
+          )
+          .join("\n");
+
+        alert(`Beberapa produk bermasalah:\n\n${message}`);
+        return;
+      }
+
+      router.push("/checkout");
+    } catch (error) {
+      console.error("Gagal validasi stock:", error);
+    }
+  };
 
   if (loading) {
     return (
@@ -310,16 +341,16 @@ export default function CartPage() {
                 </div>
               </div>
 
-              <Link
-                href="/checkout"
+              <button
                 className={`w-full block text-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl transition shadow-md shadow-blue-200 text-sm ${
                   items.length === 0 || isPending
                     ? "pointer-events-none opacity-50"
                     : ""
                 }`}
+                onClick={validateStock}
               >
                 Lanjut ke Pembayaran
-              </Link>
+              </button>
 
               <p className="text-[11px] text-gray-400 text-center mt-3">
                 🔒 Transaksi aman & terenkripsi di ByteStore.
