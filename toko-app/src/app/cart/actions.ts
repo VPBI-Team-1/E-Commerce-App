@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { ProductVariant } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { success } from "zod";
 
 type CartType = {
   productId: string;
@@ -323,3 +324,61 @@ export async function removeCartItemAction(cartItemId: string) {
     };
   }
 }
+
+export const validateCartBeforeCheckout = async (
+  items: {
+    productVariantId: string;
+    qty: number;
+  }[],
+) => {
+  const productVariants = await prisma.productVariant.findMany({
+    where: {
+      id: {
+        in: items.map((item) => item.productVariantId),
+      },
+    },
+    include: {
+      product: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+
+  const variantMap = new Map(
+    productVariants.map((variant) => [variant.id, variant]),
+  );
+
+  const outOfStock = items
+    .map((item) => {
+      const productVariant = variantMap.get(item.productVariantId);
+
+      if (!productVariant) {
+        return {
+          productVariantId: item.productVariantId,
+          productVariant: null,
+          requestedQty: item.qty,
+          availableStock: 0,
+        };
+      }
+
+      if (item.qty > productVariant.stock) {
+        return {
+          productVariantId: item.productVariantId,
+          productVariant: productVariant.name,
+          productName: productVariant.product.name,
+          requestedQty: item.qty,
+          availableStock: productVariant.stock,
+        };
+      }
+
+      return null;
+    })
+    .filter((item) => item !== null);
+
+  return {
+    success: outOfStock.length === 0,
+    outOfStock,
+  };
+};
