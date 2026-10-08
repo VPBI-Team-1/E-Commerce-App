@@ -50,6 +50,51 @@ export async function getOrCreateCart() {
   };
 }
 
+// menghitung keranjang milik pengguna yang sedang login (keperluan menampilkan jumlah item di header)
+export async function getCartItemCount(): Promise<
+  { success: true; count: number } | { success: false; count: 0; error: string }
+> {
+  try {
+    const userId = await getAuthenticatedUserId();
+
+    if (!userId) {
+      return {
+        success: false,
+        count: 0,
+        error: "Silakan login terlebih dahulu",
+      };
+    }
+
+    const cart = await prisma.cart.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (!cart) {
+      return { success: true, count: 0 };
+    }
+
+    const result = await prisma.cartItem.aggregate({
+      where: { cartId: cart.id },
+      _sum: {
+        quantity: true,
+      },
+    });
+
+    return {
+      success: true,
+      count: result._sum.quantity ?? 0,
+    };
+  } catch (error) {
+    console.error("Error fetching cart item count: ", error);
+    return {
+      success: false,
+      count: 0,
+      error: "Gagal menghitung jumlah barang di keranjang",
+    };
+  }
+}
+
 export async function getCartItems(cartId: string) {
   try {
     const cartItems = await prisma.cartItem.findMany({

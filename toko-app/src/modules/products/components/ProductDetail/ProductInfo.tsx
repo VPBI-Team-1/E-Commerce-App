@@ -19,11 +19,14 @@ export interface ProductInfoProps {
   isPreview?: boolean;
 }
 
-export default function ProductInfo({ product, isPreview = false }: ProductInfoProps) {
+export default function ProductInfo({
+  product,
+  isPreview = false,
+}: ProductInfoProps) {
   const router = useRouter();
 
   const [selectedVariantId, setSelectedVariantId] = useState<string>(
-    product.variants[0]?.id || ""
+    product.variants[0]?.id || "",
   );
   const [quantity, setQuantity] = useState<number>(1);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -36,14 +39,14 @@ export default function ProductInfo({ product, isPreview = false }: ProductInfoP
 
   const totalStock = product.variants.reduce(
     (total, variant) => total + variant.stock,
-    0
+    0,
   );
 
   const displayPrice = activeVariant
     ? `Rp ${Number(activeVariant.price).toLocaleString("id-ID")}`
     : product.variants[0]
-    ? `Rp ${Number(product.variants[0].price).toLocaleString("id-ID")}`
-    : "Harga belum tersedia";
+      ? `Rp ${Number(product.variants[0].price).toLocaleString("id-ID")}`
+      : "Harga belum tersedia";
 
   const currentStock = activeVariant ? activeVariant.stock : totalStock;
   const isAvailable = currentStock > 0;
@@ -71,6 +74,8 @@ export default function ProductInfo({ product, isPreview = false }: ProductInfoP
           setErrorMsg(res.error || "Gagal menambahkan ke keranjang");
         }
       } else {
+        window.dispatchEvent(new Event("bytestore-cart-change"));
+
         if (redirectCheckout) {
           router.push("/checkout");
         } else {
@@ -97,13 +102,9 @@ export default function ProductInfo({ product, isPreview = false }: ProductInfoP
         </span>
       </div>
 
-      <h1 className="mt-2 text-3xl font-bold text-gray-900">
-        {product.name}
-      </h1>
+      <h1 className="mt-2 text-3xl font-bold text-gray-900">{product.name}</h1>
 
-      <p className="mt-5 text-2xl font-bold text-blue-600">
-        {displayPrice}
-      </p>
+      <p className="mt-5 text-2xl font-bold text-blue-600">{displayPrice}</p>
 
       <div className="mt-5 flex items-center gap-2">
         <span
