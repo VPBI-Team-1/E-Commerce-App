@@ -16,19 +16,12 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_OPTIONS=--max-old-space-size=2048
 RUN npm run build
 
-# Runner: minimal image with built output
-FROM node:20-alpine AS runner
+# Dev: source mounted, Prisma client generated, hot reload
+FROM base AS dev
 WORKDIR /app
-COPY --from=base /app/package*.json ./
-COPY --from=base /app/node_modules ./node_modules
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/prisma.config.ts ./
-COPY --from=builder /app/.env ./
-COPY --from=builder /app/next.config.ts ./
-COPY --from=builder /app/next-env.d.ts ./
-COPY --from=builder /app/tsconfig.json ./
-ENV NODE_ENV=production
+COPY . .
+RUN npx prisma generate
+ENV NODE_ENV=development
+ENV NEXT_TELEMETRY_DISABLED=1
 EXPOSE 3000
+CMD ["npm", "run", "dev"]
