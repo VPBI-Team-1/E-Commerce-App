@@ -1,0 +1,132 @@
+"use client";
+
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  ReactNode,
+} from "react";
+
+import { useRouter } from "next/navigation";
+interface User {
+  id: string;
+  email: string;
+  name?: string | null;
+  role?: string;
+}
+
+interface AuthContextType {
+  user: User | null;
+  isLoading: boolean;
+  refreshUser: () => Promise<void>;
+  logout: (redirectPath?: string) => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const router = useRouter();
+
+  const fetchUser = useCallback(async (): Promise<void> => {
+    try {
+      const res = await fetch("/api/me");
+
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data.user);
+        if (typeof window !== "undefined" && data.user) {
+          localStorage.setItem("user", JSON.stringify(data.user));
+          window.dispatchEvent(new Event("bytestore-auth-change"));
+        }
+      } else if (res.status === 401) {
+        const refreshRes = await fetch("/api/auth/refresh", { method: "POST" });
+
+        if (refreshRes.ok) {
+          const refreshData = await refreshRes.json();
+          setUser(refreshData.user);
+          if (typeof window !== "undefined" && refreshData.user) {
+            localStorage.setItem("user", JSON.stringify(refreshData.user));
+            window.dispatchEvent(new Event("bytestore-auth-change"));
+          }
+        } else {
+          setUser(null);
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("user");
+            window.dispatchEvent(new Event("bytestore-auth-change"));
+          }
+        }
+      } else {
+        setUser(null);
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("user");
+          window.dispatchEvent(new Event("bytestore-auth-change"));
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch auth state:", error);
+      setUser(null);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("user");
+        window.dispatchEvent(new Event("bytestore-auth-change"));
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const initAuth = async () => {
+      if (isMounted) {
+        await fetchUser();
+      }
+    };
+
+    initAuth();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchUser]);
+
+  const logout = async (redirectPath: string = "/login") => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch (error) {
+      console.error("Failed to execute logout request:", error);
+    }
+    setUser(null);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("user");
+      window.dispatchEvent(new Event("bytestore-auth-change"));
+    }
+    router.push(redirectPath);
+    router.refresh();
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        refreshUser: fetchUser,
+        logout,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+}
