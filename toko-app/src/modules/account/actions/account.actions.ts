@@ -13,6 +13,10 @@ import {
   AddressInput,
   ChangePasswordInput,
 } from "@/modules/account/schemas/account.schema";
+import {
+  syncOrderLifecycle,
+  syncSingleOrder,
+} from "@/modules/admin/order/services/order-lifecycle.service";
 
 async function getAuthenticatedUser() {
   const cookieStore = await cookies();
@@ -290,6 +294,9 @@ export async function getUserOrders() {
       return { success: false, message: "Sesi telah berakhir, silakan login kembali.", data: [] };
     }
 
+    // Evaluasi lazy update untuk pesanan pengguna ini sebelum mengambil data
+    await syncOrderLifecycle({ userId: auth.userId });
+
     const orders = await prisma.order.findMany({
       where: { userId: auth.userId },
       include: {
@@ -391,6 +398,9 @@ export async function getUserOrderDetail(orderId: string) {
       return { success: false, message: "ID pesanan tidak valid." };
     }
 
+    // Evaluasi status pesanan ini secara instan jika sudah kedaluwarsa/selesai
+    await syncSingleOrder(orderId);
+
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {
@@ -454,6 +464,9 @@ export async function confirmOrderPayment(orderId: string) {
     if (!orderId || typeof orderId !== "string") {
       return { success: false, message: "ID pesanan tidak valid." };
     }
+
+    // Pastikan pesanan dievaluasi terlebih dahulu sebelum konfirmasi pembayaran
+    await syncSingleOrder(orderId);
 
     const order = await prisma.order.findUnique({
       where: { id: orderId },
