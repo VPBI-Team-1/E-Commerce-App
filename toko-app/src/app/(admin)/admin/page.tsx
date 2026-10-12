@@ -9,6 +9,7 @@ import {
 import { SalesChart, DailySalesData } from '@/modules/admin/dashboard/components/SalesChart';
 import { RecentOrders, RecentOrderItem } from '@/modules/admin/dashboard/components/RecentOrders';
 import { DashboardMonthFilter } from '@/modules/admin/dashboard/components/DashboardMonthFilter';
+import { syncOrderLifecycle } from '@/modules/admin/order/services/order-lifecycle.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +22,9 @@ interface AdminDashboardPageProps {
 export default async function AdminDashboardPage({
   searchParams,
 }: AdminDashboardPageProps) {
+  // Evaluasi siklus pesanan secara instan (lazy update) sebelum query ringkasan data
+  await syncOrderLifecycle();
+
   const params = await searchParams;
 
   const now = new Date();

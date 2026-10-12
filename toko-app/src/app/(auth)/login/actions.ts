@@ -32,11 +32,15 @@ export async function loginAction(data: LoginInput) {
     }
 
     if (!user.is_verified) {
-      return {
-        error: "Tolong verifikasi email anda sebelum login.",
-        needsVerification: true,
-        email: user.email,
-      };
+      // Fitur verifikasi dinonaktifkan: otomatis setujui verifikasi akun
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          is_verified: true,
+          verified_token: null,
+          verified_token_expired: null,
+        },
+      });
     }
 
     const accessToken = await signAccessToken({
