@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, LoginInput } from "@/schemas/auth";
@@ -13,7 +13,19 @@ export default function LoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [registeredSuccess, setRegisteredSuccess] = useState(false);
   const { refreshUser } = useAuth();
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isRegistered =
+        new URLSearchParams(window.location.search).get("registered") ===
+        "true";
+      if (isRegistered) {
+        setRegisteredSuccess(true);
+      }
+    }
+  }, []);
 
   const {
     register,
@@ -33,14 +45,6 @@ export default function LoginPage() {
 
       if (result?.error) {
         setApiError(result.error);
-
-        if (result.needsVerification && result.email) {
-          setTimeout(() => {
-            router.push(
-              `/verify-otp?email=${encodeURIComponent(result.email!)}`,
-            );
-          }, 2000);
-        }
       } else if (result?.success) {
         if (typeof window !== "undefined" && result.user) {
           localStorage.setItem("user", JSON.stringify(result.user));
@@ -86,6 +90,12 @@ export default function LoginPage() {
           <p className="mb-6 text-center text-sm text-gray-500">
             Masukkan kredensial Anda untuk masuk.
           </p>
+
+          {registeredSuccess && (
+            <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+              Pendaftaran berhasil! Akun Anda langsung aktif, silakan masuk.
+            </div>
+          )}
 
           {apiError && (
             <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">

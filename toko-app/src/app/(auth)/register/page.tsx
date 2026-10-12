@@ -39,7 +39,7 @@ export default function RegisterPage() {
       if (result?.error) {
         setApiError(result.error);
       } else if (result?.success) {
-        router.push(`/verify?email=${encodeURIComponent(result.email)}`);
+        router.push("/login?registered=true");
       } else {
         setApiError("Server tidak mengembalikan respon yang valid.");
       }
