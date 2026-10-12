@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { OrderStatusBadge } from '@/modules/admin/order/components/OrderStatusBadge';
 import { OrderActionButtons } from '@/modules/admin/order/components/OrderActionButtons';
+import { syncSingleOrder } from '@/modules/admin/order/services/order-lifecycle.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +24,9 @@ export default async function AdminOrderDetailPage({
   params,
 }: AdminOrderDetailPageProps) {
   const { id } = await params;
+
+  // Evaluasi siklus pesanan ini secara instan (lazy update) sebelum query data
+  await syncSingleOrder(id);
 
   const order = await prisma.order.findUnique({
     where: { id },

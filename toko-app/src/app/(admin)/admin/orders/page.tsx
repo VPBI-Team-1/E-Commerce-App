@@ -4,6 +4,7 @@ import { OrderTable, OrderListItem } from '@/modules/admin/order/components/Orde
 import { OrderStatusFilter } from '@/modules/admin/order/components/OrderStatusFilter';
 import { OrderSearch } from '@/modules/admin/order/components/OrderSearch';
 import { OrderPagination } from '@/modules/admin/order/components/OrderPagination';
+import { syncOrderLifecycle } from '@/modules/admin/order/services/order-lifecycle.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +19,9 @@ interface AdminOrdersPageProps {
 export default async function AdminOrdersPage({
   searchParams,
 }: AdminOrdersPageProps) {
+  // Evaluasi siklus pesanan secara instan (lazy update) sebelum query data
+  await syncOrderLifecycle();
+
   const params = await searchParams;
 
   const search = typeof params?.search === 'string' ? params.search.trim() : '';
