@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate && npx prisma db seed"
+    "postinstall": "prisma generate"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -45,8 +48,5 @@
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
   }
 }
