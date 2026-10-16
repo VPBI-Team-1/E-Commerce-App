@@ -6,11 +6,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, LoginInput } from "@/schemas/auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { loginAction } from "@/app/(auth)/login/actions";
+import { useAuth } from "@/context/AuthContext";
+import { AuthNotification } from "@/components/ui/AuthNotification";
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [loginSuccess, setLoginSuccess] = useState<string | null>(null);
+  const { refreshUser } = useAuth();
 
   const {
     register,
@@ -26,17 +31,29 @@ export default function AdminLoginPage() {
     setApiError(null);
 
     try {
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          email: data.email,
-          role: data.role,
-          name: data.email.split("@")[0],
-        }),
-      );
+      const result = await loginAction(data);
 
-      router.push("/admin");
+      if (result?.error) {
+        setApiError(result.error);
+      } else if (result?.success) {
+        if (typeof window !== "undefined" && result.user) {
+          localStorage.setItem("user", JSON.stringify(result.user));
+          window.dispatchEvent(new Event("bytestore-auth-change"));
+        }
+        await refreshUser();
+
+        setLoginSuccess("Login berhasil! Mengalihkan ke admin panel...");
+        setApiError(null);
+
+        // Redirect after 3 seconds to allow user to see success message
+        setTimeout(() => {
+          router.push("/admin");
+        }, 3000);
+      } else {
+        setApiError("Server tidak mengembalikan respon yang valid.");
+      }
     } catch (err) {
+      console.error("Login error:", err);
       setApiError("Terjadi kesalahan. Silakan coba lagi.");
     } finally {
       setIsLoading(false);
@@ -66,10 +83,16 @@ export default function AdminLoginPage() {
             Masukkan kredensial admin Anda.
           </p>
 
+          {loginSuccess && (
+            <AuthNotification type="success" message={loginSuccess} />
+          )}
+
           {apiError && (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
-              {apiError}
-            </div>
+            <AuthNotification
+              type="error"
+              message={apiError}
+              onClose={() => setApiError(null)}
+            />
           )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

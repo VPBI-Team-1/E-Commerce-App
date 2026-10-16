@@ -7,11 +7,13 @@ import { registerSchema, RegisterInput } from "@/schemas/auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { registerAction } from "./actions";
+import { AuthNotification } from "@/components/ui/AuthNotification";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [apiSuccess, setApiSuccess] = useState<string | null>(null);
 
   const {
     register,
@@ -38,8 +40,14 @@ export default function RegisterPage() {
 
       if (result?.error) {
         setApiError(result.error);
+        setApiSuccess(null);
       } else if (result?.success) {
-        router.push("/login?registered=true");
+        setApiSuccess("Pendaftaran berhasil! Akun Anda sudah aktif, silakan masuk.");
+        setApiError(null);
+        // Redirect after brief success display
+        setTimeout(() => {
+          router.push("/login?registered=true");
+        }, 2000);
       } else {
         setApiError("Server tidak mengembalikan respon yang valid.");
       }
@@ -74,10 +82,16 @@ export default function RegisterPage() {
             Lengkapi data di bawah untuk mendaftar.
           </p>
 
+          {apiSuccess && (
+            <AuthNotification type="success" message={apiSuccess} />
+          )}
+
           {apiError && (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
-              {apiError}
-            </div>
+            <AuthNotification
+              type="error"
+              message={apiError}
+              onClose={() => setApiError(null)}
+            />
           )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { loginAction } from "./actions";
 import { useAuth } from "@/context/AuthContext";
+import { AuthNotification } from "@/components/ui/AuthNotification";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -36,6 +37,8 @@ export default function LoginPage() {
     defaultValues: { email: "", password: "", role: "CUSTOMER" },
   });
 
+  const [loginSuccess, setLoginSuccess] = useState<string | null>(null);
+
   const onSubmit = async (data: LoginInput) => {
     setIsLoading(true);
     setApiError(null);
@@ -52,13 +55,19 @@ export default function LoginPage() {
         }
         await refreshUser();
 
+        setLoginSuccess("Login berhasil! Mengalihkan...");
+        setApiError(null);
+
         const redirectUrl =
           typeof window !== "undefined"
             ? new URLSearchParams(window.location.search).get("redirect") || "/"
             : "/";
 
-        router.push(redirectUrl);
-        router.refresh();
+        // Clear success notification after 3 seconds then redirect
+        setTimeout(() => {
+          router.push(redirectUrl);
+          router.refresh();
+        }, 3000);
       }
     } catch (err) {
       console.error("Error : ", err);
@@ -91,16 +100,23 @@ export default function LoginPage() {
             Masukkan kredensial Anda untuk masuk.
           </p>
 
+          {loginSuccess && (
+            <AuthNotification type="success" message={loginSuccess} />
+          )}
+
           {registeredSuccess && (
-            <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
-              Pendaftaran berhasil! Akun Anda langsung aktif, silakan masuk.
-            </div>
+            <AuthNotification
+              type="success"
+              message="Pendaftaran berhasil! Akun Anda langsung aktif, silakan masuk."
+            />
           )}
 
           {apiError && (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
-              {apiError}
-            </div>
+            <AuthNotification
+              type="error"
+              message={apiError}
+              onClose={() => setApiError(null)}
+            />
           )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
